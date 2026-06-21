@@ -100,6 +100,10 @@ th { color:var(--text-muted); font-size:11px; text-transform:uppercase; }
       </div>
       <button class="btn btn-primary" onclick="generateCourier()">🔄 توليد مندوب جديد</button>
       <div id="genResult" class="hidden courier-creds"></div>
+      <div id="genListWrap" style="margin-top:18px;">
+        <h4 style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">📋 آخر الحسابات المولدة</h4>
+        <div id="genList" style="font-size:13px;color:var(--text-muted);">-</div>
+      </div>
     </div>
 
     <!-- Tab: المندوبين -->
@@ -167,7 +171,7 @@ function switchTab(tab){
   document.querySelector('.tab[data-tab="'+tab+'"]').classList.add('active')
   document.querySelectorAll('[id^="tab-"]').forEach(t=>t.classList.add('hidden'))
   document.getElementById('tab-'+tab).classList.remove('hidden')
-  if(tab==='generate'){document.getElementById('genUsername').value=genRandomUsername();document.getElementById('genPassword').value=genRandomPassword()}
+  if(tab==='generate'){document.getElementById('genUsername').value=genRandomUsername();document.getElementById('genPassword').value=genRandomPassword();loadGeneratedCouriers()}
 }
 
 async function generateCourier(){
@@ -182,6 +186,7 @@ async function generateCourier(){
   document.getElementById('genPassword').value=genRandomPassword()
   btn.disabled=false;btn.textContent='🔄 توليد مندوب جديد'
   loadCouriers()
+  loadGeneratedCouriers()
 }
 
 async function loadCouriers(){
@@ -236,6 +241,23 @@ async function adminDelete(id){
   loadOrders()
 }
 
+async function loadGeneratedCouriers(){
+  const{data}=await sbFetch('couriers?select=username,password,created_at&order=created_at.desc&limit=10')
+  const el=document.getElementById('genList')
+  if(!data||data.length===0){el.innerHTML='<span style="color:var(--text-muted)">لا يوجد حسابات مولدة بعد</span>';return}
+  const link='https://teacher-plan.github.io/Sahm/تسجيل-دخول-مندوب.html'
+  const rows=data.map(c=>'<tr><td style="font-weight:600">'+esc(c.username)+'</td><td style="direction:ltr;text-align:left;font-family:monospace">'+esc(c.password)+'</td><td><button class="btn btn-sm btn-primary" onclick="copyCredentials(\''+esc(c.username)+'\',\''+c.password+'\')">📋 نسخ</button></td></tr>').join('')
+  el.innerHTML='<table style="font-size:13px"><thead><tr><th>المستخدم</th><th>كلمة المرور</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'
+}
+function copyCredentials(username,password){
+  const link='https://teacher-plan.github.io/Sahm/%D8%AA%D8%B3%D8%AC%D9%8A%D9%84-%D8%AF%D8%AE%D9%88%D9%84-%D9%85%D9%86%D8%AF%D9%88%D8%A8.html'
+  const msg='مرحباً بك في منصة توصيل ✅\n\nتم إنشاء حسابك كـ مندوب توصيل:\n\n👤 اسم المستخدم: '+username+'\n🔑 كلمة المرور: '+password+'\n🔗 رابط الدخول:\n'+link+'\n\nبالتوفيق،\nالإدارة'
+  navigator.clipboard.writeText(msg).then(()=>{
+    showAlert('genAlert','✅ تم نسخ الرسالة! أرسلها للمندوب','good')
+  }).catch(()=>{
+    alert(msg)
+  })
+}
 function esc(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 </script>
 </body>
