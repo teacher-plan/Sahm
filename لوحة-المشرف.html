@@ -125,7 +125,8 @@ async function sbFetch(path,opts={}){
   try{
     const r=await fetch(SUPABASE_URL+'/rest/v1/'+path,{headers:{...SB_HEADERS,...opts.headers},...opts})
     if(!r.ok)throw new Error(r.statusText)
-    if(opts.method==='DELETE'||opts.method==='PATCH'&&!opts.returnData)return{data:null,error:null}
+    if(opts.method==='DELETE')return{data:null,error:null}
+    if(opts.method==='PATCH'&&!opts.returnData)return{data:null,error:null}
     return{data:await r.json(),error:null}
   }catch(e){return{data:null,error:e}}
 }
@@ -208,7 +209,7 @@ async function loadOrders(){
   if(data.length===0){el.innerHTML='<p style="color:var(--text-muted)">لا توجد طلبات</p>';return}
   const rows=data.map(o=>{
     const statusMap={pending:'⏳',booked:'📌',picked_up:'📦',in_transit:'🚚',delivered:'✅',cancelled:'❌'}
-    return '<tr><td>'+esc(o.tracking||'-')+'</td><td>'+esc(o.title||'-')+'</td><td>'+esc(o.sender_phone||'-')+'</td><td>'+esc(o.governorate||'-')+'</td><td>'+(statusMap[o.status]||'')+' '+esc(o.status||'-')+'</td><td>'+(o.courier_name?esc(o.courier_name):'-')+'</td><td>'+(o.status==='pending'?'<button class="btn btn-sm btn-danger" onclick="adminCancel(\''+o.id+'\')">إلغاء</button>':'')+'</td></tr>'
+    return '<tr><td>'+esc(o.tracking||'-')+'</td><td>'+esc(o.title||'-')+'</td><td>'+esc(o.sender_phone||'-')+'</td><td>'+esc(o.governorate||'-')+'</td><td>'+(statusMap[o.status]||'')+' '+esc(o.status||'-')+'</td><td>'+(o.courier_name?esc(o.courier_name):'-')+'</td><td>'+(o.status==='pending'?'<button class="btn btn-sm btn-danger" onclick="adminCancel(\''+o.id+'\')" style="margin-left:4px;">إلغاء</button>':'')+'<button class="btn btn-sm btn-danger" onclick="adminDelete(\''+o.id+'\')" style="background:#991b1b;color:white;margin-right:4px;">🗑️ حذف</button></td></tr>'
   }).join('')
   el.innerHTML='<table><thead><tr><th>التتبع</th><th>الطرد</th><th>المرسل</th><th>المحافظة</th><th>الحالة</th><th>المندوب</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'
 }
@@ -216,6 +217,14 @@ async function loadOrders(){
 async function adminCancel(id){
   if(!confirm('إلغاء هذا الطلب؟'))return
   await sbFetch('orders?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:'cancelled'})})
+  loadOrders()
+}
+
+async function adminDelete(id){
+  if(!confirm('⚠️ حذف هذا الطلب نهائياً من قاعدة البيانات؟\n\nلا يمكن التراجع عن هذا الإجراء!'))return
+  const btn=event&&event.target?event.target:null
+  if(btn){btn.disabled=true;btn.textContent='⏳'}
+  await sbFetch('orders?id=eq.'+id,{method:'DELETE'})
   loadOrders()
 }
 
