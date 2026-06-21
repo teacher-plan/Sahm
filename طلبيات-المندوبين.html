@@ -53,7 +53,10 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 .filter-row input::placeholder { color:#94a3b8; }
 .filter-row .stats { font-size:13px; color:var(--text-muted); background:var(--primary-light); padding:6px 16px; border-radius:20px; white-space:nowrap; }
 .filter-label { font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
-@media(max-width:768px){ .filter-row { flex-direction:column; align-items:stretch; } .filter-row input { min-width:auto; } }
+.btn-clear { padding:7px 14px; border:none; border-radius:8px; background:#fef2f2; color:#991b1b; font-size:12px; font-weight:600; cursor:pointer; transition:var(--transition); white-space:nowrap; }
+.btn-clear:hover { background:#fecaca; }
+.filter-active { background:var(--secondary-light)!important; border-color:var(--secondary)!important; }
+@media(max-width:768px){ .filter-row { flex-direction:column; align-items:stretch; } .filter-row input { min-width:auto!important; flex:1!important; } .filter-row input[type=date] { min-width:auto; } .btn-clear { width:100%; text-align:center; } }
 
 #alert { position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:999; width:calc(100% - 40px); max-width:420px; pointer-events:none; }
 .alert { padding:14px 20px; border-radius:var(--radius-sm); font-size:14px; font-weight:500; display:flex; align-items:center; gap:10px; box-shadow:0 8px 32px rgba(0,0,0,0.12); animation:slideDown 0.4s ease-out; backdrop-filter:blur(12px); pointer-events:auto; }
@@ -205,12 +208,10 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
   <!-- Advanced Filters -->
   <div class="filter-bar">
     <div class="filter-row">
-      <span class="filter-label">🔍 بحث</span>
-      <input type="text" id="filter-search" placeholder="ابحث بالعنوان أو الموقع..." oninput="renderOrders()">
+      <span class="filter-label">🔍 كلمة مفتاحية</span>
+      <input type="text" id="filter-search" placeholder="عنوان، وصف، موقع..." oninput="renderOrders()">
       <span class="filter-label">المحافظة</span>
-      <select id="filter-gov" onchange="renderOrders()">
-        <option value="">الكل</option>
-      </select>
+      <select id="filter-gov" onchange="renderOrders()"><option value="">الكل</option></select>
       <span class="filter-label">النوع</span>
       <select id="filter-type" onchange="renderOrders()">
         <option value="">الكل</option>
@@ -227,7 +228,21 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
         <option value="highest">الأعلى مبلغاً</option>
         <option value="lowest">الأقل مبلغاً</option>
       </select>
+      <button class="btn-clear" onclick="clearFilters()" title="مسح الكل">✕ مسح الكل</button>
       <div class="stats" id="stats"></div>
+    </div>
+    <div class="filter-row" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+      <span class="filter-label">📅 من</span>
+      <input type="date" id="filter-date-from" onchange="renderOrders()">
+      <span class="filter-label">إلى</span>
+      <input type="date" id="filter-date-to" onchange="renderOrders()">
+      <span class="filter-label">💰 المبلغ</span>
+      <input type="number" id="filter-amount-min" placeholder="الحد الأدنى" style="min-width:100px;flex:0.5" oninput="renderOrders()">
+      <span style="color:var(--text-muted)">-</span>
+      <input type="number" id="filter-amount-max" placeholder="الحد الأعلى" style="min-width:100px;flex:0.5" oninput="renderOrders()">
+      <span class="filter-label">📞 هاتف</span>
+      <input type="text" id="filter-phone" placeholder="رقم المرسل أو المستلم" style="min-width:140px;flex:0.7" oninput="renderOrders()">
+      <div id="activeFilters" style="font-size:11px;color:var(--primary);margin-right:4px;"></div>
     </div>
   </div>
 
@@ -319,20 +334,57 @@ function getFilteredOrders(){
   const search=document.getElementById('filter-search').value.trim().toLowerCase()
   const type=document.getElementById('filter-type').value
   const sort=document.getElementById('filter-sort').value
+  const dateFrom=document.getElementById('filter-date-from').value
+  const dateTo=document.getElementById('filter-date-to').value
+  const amtMin=parseFloat(document.getElementById('filter-amount-min').value)
+  const amtMax=parseFloat(document.getElementById('filter-amount-max').value)
+  const phone=document.getElementById('filter-phone').value.trim().toLowerCase()
 
   let filtered=orders
   if(gov)filtered=filtered.filter(o=>o.governorate===gov)
   if(type)filtered=filtered.filter(o=>o.type===type)
   if(search)filtered=filtered.filter(o=>
     (o.title&&o.title.toLowerCase().includes(search))||
+    (o.description&&o.description.toLowerCase().includes(search))||
     (o.pickup_location&&o.pickup_location.toLowerCase().includes(search))||
     (o.dropoff_location&&o.dropoff_location.toLowerCase().includes(search))||
     (o.tracking&&o.tracking.toLowerCase().includes(search))
   )
+  if(phone)filtered=filtered.filter(o=>
+    (o.sender_phone&&o.sender_phone.toLowerCase().includes(phone))||
+    (o.recipient_phone&&o.recipient_phone.toLowerCase().includes(phone))
+  )
+  if(dateFrom)filtered=filtered.filter(o=>!o.created_at||o.created_at.slice(0,10)>=dateFrom)
+  if(dateTo)filtered=filtered.filter(o=>!o.created_at||o.created_at.slice(0,10)<=dateTo)
+  if(!isNaN(amtMin))filtered=filtered.filter(o=>o.amount>=amtMin)
+  if(!isNaN(amtMax))filtered=filtered.filter(o=>o.amount<=amtMax)
   if(sort==='newest')filtered.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))
   else if(sort==='highest')filtered.sort((a,b)=>b.amount-a.amount)
   else if(sort==='lowest')filtered.sort((a,b)=>a.amount-b.amount)
+
+  const af=document.getElementById('activeFilters')
+  const active=[]
+  if(gov)active.push(gov)
+  if(type)active.push(type)
+  if(search)active.push('🔍')
+  if(phone)active.push('📞')
+  if(dateFrom||dateTo)active.push('📅')
+  if(!isNaN(amtMin)||!isNaN(amtMax))active.push('💰')
+  af.textContent=active.length?'مرشح حسب: '+active.join('، '):''
   return filtered
+}
+
+function clearFilters(){
+  document.getElementById('filter-search').value=''
+  document.getElementById('filter-gov').value=''
+  document.getElementById('filter-type').value=''
+  document.getElementById('filter-sort').value='newest'
+  document.getElementById('filter-date-from').value=''
+  document.getElementById('filter-date-to').value=''
+  document.getElementById('filter-amount-min').value=''
+  document.getElementById('filter-amount-max').value=''
+  document.getElementById('filter-phone').value=''
+  renderOrders()
 }
 
 function renderOrders(){
