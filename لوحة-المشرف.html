@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>توصيل - لوحة المشرف</title>
+<title>سهم - لوحة المشرف</title>
 <style>
 :root { --primary:#0f766e; --primary-hover:#0d9488; --primary-light:#ccfbf1; --secondary:#d97706; --text:#0f172a; --text-muted:#64748b; --bg:#faf8f5; --card-bg:rgba(255,255,255,0.82); --border:#e2e8f0; --shadow:0 4px 16px rgba(0,0,0,0.06); --radius:16px; --radius-sm:10px; --transition:0.3s; }
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -53,7 +53,7 @@ th { color:var(--text-muted); font-size:11px; text-transform:uppercase; }
 </head>
 <body>
 
-<div class="header"><h1>⚙️ لوحة المشرف - منصة توصيل</h1></div>
+<div class="header"><h1>⚙️ لوحة المشرف - سهم</h1></div>
 
 <div class="container">
   <!-- Admin Login -->
@@ -251,7 +251,7 @@ async function loadGeneratedCouriers(){
 }
 function copyCredentials(username,password){
   const link='https://teacher-plan.github.io/Sahm/%D8%AA%D8%B3%D8%AC%D9%8A%D9%84-%D8%AF%D8%AE%D9%88%D9%84-%D9%85%D9%86%D8%AF%D9%88%D8%A8.html'
-  const msg='مرحباً بك في منصة توصيل ✅\n\nتم إنشاء حسابك كـ مندوب توصيل:\n\n👤 اسم المستخدم: '+username+'\n🔑 كلمة المرور: '+password+'\n🔗 رابط الدخول:\n'+link+'\n\nبالتوفيق،\nالإدارة'
+  const msg='مرحباً بك في سهم ✅\n\nتم إنشاء حسابك كـ مندوب:\n\n👤 اسم المستخدم: '+username+'\n🔑 كلمة المرور: '+password+'\n🔗 رابط الدخول:\n'+link+'\n\nبالتوفيق،\nالإدارة'
   navigator.clipboard.writeText(msg).then(()=>{
     showAlert('genAlert','✅ تم نسخ الرسالة! أرسلها للمندوب','good')
   }).catch(()=>{
