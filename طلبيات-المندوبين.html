@@ -130,7 +130,28 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 @keyframes scaleIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
 
-.footer { text-align:center; padding:24px; color:var(--text-muted); font-size:13px; border-top:1px solid var(--border); background:rgba(255,255,255,0.6); backdrop-filter:blur(8px); margin-top:40px; }
+.footer { text-align:center; padding:24px; color:var(--text-muted); font-size:13px; border-top:1px solid var(--border); background:rgba(255,255,255,0.6); backdrop-filter:blur(8px); }
+
+/* Tab Panes */
+.tab-pane { display:none; }
+.tab-pane.active { display:block; animation:fadeInUp 0.3s ease-out; }
+
+/* Bottom Navigation */
+.bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:100; display:flex; background:rgba(255,255,255,0.95); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border-top:1px solid var(--border); box-shadow:0 -4px 24px rgba(0,0,0,0.06); }
+.nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 4px 10px; border:none; background:none; cursor:pointer; transition:var(--transition); position:relative; color:var(--text-muted); }
+.nav-item.active { color:var(--primary); }
+.nav-item .nav-icon { font-size:20px; line-height:1; }
+.nav-item .nav-label { font-size:11px; font-weight:600; }
+.nav-item .nav-badge { position:absolute; top:2px; right:50%; transform:translateX(calc(50% + 22px)); background:#991b1b; color:white; font-size:9px; font-weight:700; padding:1px 6px; border-radius:10px; min-width:16px; text-align:center; display:none; }
+.nav-item .nav-badge.show { display:block; }
+
+/* Stats Cards */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.stat-card{background:var(--primary-light);border-radius:var(--radius-sm);padding:14px;text-align:center}
+.stat-card .num{font-size:24px;font-weight:700;color:var(--primary)}
+.stat-card .lbl{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+.container { padding-bottom:80px; }
 
 /* ===== تحسينات الجوال ===== */
 @media(max-width:480px){
@@ -171,6 +192,11 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
   .empty-state{padding:24px 16px;font-size:13px}
   .alert{padding:12px 16px;font-size:13px}
   .booked-info{font-size:12px;padding:8px 12px}
+  .nav-item{padding:6px 2px 8px}
+  .nav-item .nav-icon{font-size:18px}
+  .nav-item .nav-label{font-size:10px}
+  .stat-grid{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+  .container{padding-bottom:70px}
 }
 
 @media(min-width:481px)and(max-width:768px){
@@ -246,23 +272,47 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
     </div>
   </div>
 
-  <div class="section">
-    <h3>🟢 طلبيات متاحة (<span id="avail-count">0</span>)</h3>
-    <div id="available-orders"><div class="empty-state">لا توجد طلبيات متاحة حالياً</div></div>
-  </div>
-
-  <div class="section">
-    <h3>🔄 قيد التنفيذ (<span id="active-count">0</span>)</h3>
-    <div id="active-orders"><div class="empty-state">لا توجد طلبيات قيد التنفيذ</div></div>
-  </div>
-
-  <div class="section">
-    <h3>✅ منجزة وملغية (<span id="done-count">0</span>)</h3>
-    <div id="done-orders"><div class="empty-state">لا توجد</div></div>
+  <!-- Tab Content -->
+  <div id="tabContent">
+    <div id="tab-available" class="tab-pane active">
+      <div class="section"><div id="available-orders"><div class="empty-state">لا توجد طلبيات متاحة</div></div></div>
+    </div>
+    <div id="tab-active" class="tab-pane">
+      <div class="section"><div id="active-orders"><div class="empty-state">لا توجد طلبيات قيد التنفيذ</div></div></div>
+    </div>
+    <div id="tab-done" class="tab-pane">
+      <div class="section"><div id="done-orders"><div class="empty-state">لا توجد</div></div></div>
+    </div>
+    <div id="tab-stats" class="tab-pane">
+      <div class="section" id="courierStats"><div class="empty-state">جاري التحميل...</div></div>
+    </div>
   </div>
 </div>
 
 <div class="lightbox" id="lightbox" onclick="closeLightbox()"><img id="lightbox-img" src=""></div>
+
+<!-- Bottom Tab Bar -->
+<div class="bottom-nav">
+  <button class="nav-item active" data-tab="available" onclick="switchCourierTab('available')">
+    <span class="nav-icon">🟢</span>
+    <span class="nav-label">متاحة</span>
+    <span class="nav-badge" id="badge-available">0</span>
+  </button>
+  <button class="nav-item" data-tab="active" onclick="switchCourierTab('active')">
+    <span class="nav-icon">🔄</span>
+    <span class="nav-label">قيد التنفيذ</span>
+    <span class="nav-badge" id="badge-active">0</span>
+  </button>
+  <button class="nav-item" data-tab="done" onclick="switchCourierTab('done')">
+    <span class="nav-icon">✅</span>
+    <span class="nav-label">منجزة</span>
+    <span class="nav-badge" id="badge-done">0</span>
+  </button>
+  <button class="nav-item" data-tab="stats" onclick="switchCourierTab('stats')">
+    <span class="nav-icon">📊</span>
+    <span class="nav-label">إحصائياتي</span>
+  </button>
+</div>
 
 <div class="footer"><p>جميع الحقوق محفوظة © 2026 - سهم</p></div>
 
@@ -387,21 +437,60 @@ function clearFilters(){
   renderOrders()
 }
 
+function switchCourierTab(tab){
+  document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'))
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'))
+  document.getElementById('tab-'+tab).classList.add('active')
+  document.querySelector('.nav-item[data-tab="'+tab+'"]').classList.add('active')
+  if(tab==='stats')loadCourierStats()
+}
+
 function renderOrders(){
   const filtered=getFilteredOrders()
   const available=filtered.filter(o=>o.status==='pending')
   const active=filtered.filter(o=>['booked','picked_up','in_transit'].includes(o.status))
   const done=filtered.filter(o=>['delivered','cancelled'].includes(o.status))
   const totalAvail=orders.filter(o=>o.status==='pending').length
+  const totalActive=orders.filter(o=>['booked','picked_up','in_transit'].includes(o.status)).length
+  const totalDone=orders.filter(o=>['delivered','cancelled'].includes(o.status)).length
 
-  document.getElementById('avail-count').textContent=available.length
-  document.getElementById('active-count').textContent=active.length
-  document.getElementById('done-count').textContent=done.length
   document.getElementById('stats').textContent='🚚 '+totalAvail+' متاحة'
+
+  const bAvail=document.getElementById('badge-available')
+  bAvail.textContent=totalAvail;bAvail.classList.toggle('show',totalAvail>0)
+  const bActive=document.getElementById('badge-active')
+  bActive.textContent=totalActive;bActive.classList.toggle('show',totalActive>0)
+  const bDone=document.getElementById('badge-done')
+  bDone.textContent=totalDone;bDone.classList.toggle('show',totalDone>0)
 
   document.getElementById('available-orders').innerHTML=available.length===0?'<div class="empty-state">لا توجد طلبيات متاحة</div>':'<div class="orders-grid">'+available.map(o=>cardHTML(o)).join('')+'</div>'
   document.getElementById('active-orders').innerHTML=active.length===0?'<div class="empty-state">لا توجد طلبيات قيد التنفيذ</div>':'<div class="orders-grid">'+active.map(o=>cardHTML(o)).join('')+'</div>'
   document.getElementById('done-orders').innerHTML=done.length===0?'<div class="empty-state">لا توجد</div>':'<div class="orders-grid">'+done.map(o=>cardHTML(o)).join('')+'</div>'
+}
+
+async function loadCourierStats(){
+  const el=document.getElementById('courierStats')
+  const{data}=await sbFetch('orders?select=status,amount,created_at&courier_id=eq.'+cId)
+  if(!data||data.length===0){el.innerHTML='<div class="empty-state">لا توجد إحصائيات بعد</div>';return}
+  const myOrders=data
+  const delivered=myOrders.filter(o=>o.status==='delivered')
+  const totalEarnings=delivered.reduce((s,o)=>s+(o.amount||0),0)
+  const today=new Date().toISOString().slice(0,10)
+  const todayOrders=myOrders.filter(o=>o.created_at&&o.created_at.slice(0,10)===today)
+  const todayEarnings=todayOrders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(o.amount||0),0)
+  const statusCount={}
+  myOrders.forEach(o=>{statusCount[o.status]=(statusCount[o.status]||0)+1})
+  const statusLabels={pending:'قيد الانتظار',booked:'محجوز',picked_up:'مستلم',in_transit:'في الطريق',delivered:'منجز',cancelled:'ملغي'}
+  el.innerHTML='<div class="stat-grid">'
+    +'<div class="stat-card"><div class="num">'+myOrders.length+'</div><div class="lbl">📦 إجمالي الطلبات</div></div>'
+    +'<div class="stat-card"><div class="num">'+todayOrders.length+'</div><div class="lbl">📅 طلبات اليوم</div></div>'
+    +'<div class="stat-card"><div class="num">'+delivered.length+'</div><div class="lbl">✅ تم التوصيل</div></div>'
+    +'<div class="stat-card"><div class="num">'+totalEarnings+'</div><div class="lbl">💰 إجمالي الأرباح</div></div>'
+    +'<div class="stat-card"><div class="num">'+todayEarnings+'</div><div class="lbl">💰 أرباح اليوم</div></div>'
+    +'</div>'
+    +'<div class="stat-grid">'
+    +Object.keys(statusCount).filter(k=>statusCount[k]>0).map(k=>'<div class="stat-card" style="background:var(--bg)"><div class="num" style="font-size:20px">'+statusCount[k]+'</div><div class="lbl">'+statusLabels[k]+'</div></div>').join('')
+    +'</div>'
 }
 
 async function bookOrder(id){
