@@ -224,7 +224,7 @@ async function adminCancel(id){
 
 async function adminDelete(id){
   if(!confirm('⚠️ حذف هذا الطلب نهائياً من قاعدة البيانات؟\n\nلا يمكن التراجع عن هذا الإجراء!'))return
-  const{data,error}=await sbFetch('orders?id=eq.'+id,{method:'DELETE',headers:{'Prefer':'return=minimal'}})
+  const{data,error}=await sbFetch('orders?id=eq.'+id,{method:'DELETE'})
   if(error){alert('❌ فشل الحذف: '+error.message);return}
   loadOrders()
 }

@@ -22,5 +22,6 @@ ON CONFLICT (username) DO NOTHING;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_id TEXT DEFAULT '';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_name TEXT DEFAULT '';
 
--- تعطيل RLS مؤقتاً للمندوبين (للتجربة)
+-- تعطيل RLS مؤقتاً (للتجربة)
 ALTER TABLE couriers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE orders DISABLE ROW LEVEL SECURITY;
