@@ -193,13 +193,20 @@ async function loadCouriers(){
   const rows=data.map(c=>{
     const active=c.is_active?'<span class="tag on">نشط</span>':'<span class="tag off">موقوف</span>'
     const profile=c.has_profile?'<span style="color:#065f46">✅ مكتمل</span>':'<span style="color:#991b1b">⏳ ناقص</span>'
-    return '<tr><td>'+esc(c.username)+'</td><td>'+esc(c.name||'-')+'</td><td>'+esc(c.phone||'-')+'</td><td>'+active+'</td><td>'+profile+'</td><td><button class="btn btn-sm '+(c.is_active?'btn-danger':'btn-primary')+'" onclick="toggleCourier(\''+c.id+'\','+(!c.is_active)+')">'+(c.is_active?'إيقاف':'تفعيل')+'</button></td></tr>'
+    return '<tr><td>'+esc(c.username)+'</td><td>'+esc(c.name||'-')+'</td><td>'+esc(c.phone||'-')+'</td><td>'+active+'</td><td>'+profile+'</td><td><button class="btn btn-sm '+(c.is_active?'btn-danger':'btn-primary')+'" onclick="toggleCourier(\''+c.id+'\','+(!c.is_active)+')">'+(c.is_active?'إيقاف':'تفعيل')+'</button> <button class="btn btn-sm btn-danger" style="background:#991b1b;color:white;margin-top:3px" onclick="deleteCourier(\''+c.id+'\',\''+esc(c.username)+'\')">🗑️ حذف</button></td></tr>'
   }).join('')
   el.innerHTML='<table><thead><tr><th>المستخدم</th><th>الاسم</th><th>الهاتف</th><th>الحالة</th><th>الملف</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'
 }
 
 async function toggleCourier(id,activate){
   await sbFetch('couriers?id=eq.'+id,{method:'PATCH',body:JSON.stringify({is_active:activate})})
+  loadCouriers()
+}
+
+async function deleteCourier(id,username){
+  if(!confirm('⚠️ حذف المندوب "'+username+'" نهائياً؟\n\nلا يمكن التراجع عن هذا الإجراء!'))return
+  const{data,error}=await sbFetch('couriers?id=eq.'+id,{method:'DELETE'})
+  if(error){alert('❌ فشل الحذف: '+error.message);return}
   loadCouriers()
 }
 
