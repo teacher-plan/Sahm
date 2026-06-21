@@ -175,7 +175,9 @@ function switchTab(tab){
 }
 
 async function generateCourier(){
-  showAlert('genAlert','⏳ جاري تجهيز الحساب...','info')
+  const alertEl=document.getElementById('genAlert')
+  alertEl.innerHTML='<div class="alert-box info">⏳ جاري تجهيز الحساب...</div>'
+  document.getElementById('genResult').classList.add('hidden')
   const btn=document.querySelector('#tab-generate .btn');btn.disabled=true;btn.textContent='⏳ جاري...'
   let username,password
   for(let i=0;i<10;i++){
@@ -185,6 +187,7 @@ async function generateCourier(){
     document.getElementById('genPassword').value=password
     const{data,error}=await sbFetch('couriers',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify({username,password,name:'',phone:'',governorate:'',vehicle_type:'',has_profile:false,is_active:true})})
     if(!error){
+      alertEl.innerHTML=''
       document.getElementById('genResult').classList.remove('hidden')
       document.getElementById('genResult').innerHTML='✅ <strong>تم التوليد بنجاح!</strong><br><br>👤 اسم المستخدم: <span class="cred">'+username+'</span><br>🔑 كلمة المرور: <span class="cred">'+password+'</span><br><br><span style="font-size:12px;color:var(--text-muted);">سلم هذه البيانات للمندوب لتسجيل الدخول</span>'
       btn.disabled=false;btn.textContent='🔄 توليد مندوب جديد'
@@ -193,11 +196,11 @@ async function generateCourier(){
       return
     }
     if(!error.message.includes('409')&&!error.message.includes('23505')){
-      showAlert('genAlert','❌ فشل التوليد: '+error.message,'bad')
+      alertEl.innerHTML='<div class="alert-box bad">❌ فشل التوليد: '+esc(error.message)+'</div>'
       btn.disabled=false;btn.textContent='🔄 توليد مندوب جديد';return
     }
   }
-  showAlert('genAlert','❌ فشل بعد 10 محاولات، جرب مرة أخرى','bad')
+  alertEl.innerHTML='<div class="alert-box bad">❌ فشل بعد 10 محاولات، جرب مرة أخرى</div>'
   btn.disabled=false;btn.textContent='🔄 توليد مندوب جديد'
 }
 
