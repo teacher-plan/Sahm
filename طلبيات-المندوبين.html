@@ -231,8 +231,9 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 
   <div id="alert"></div>
 
+  <div id="filterBarWrapper">
   <!-- Advanced Filters -->
-  <div class="filter-bar">
+  <div class="filter-bar" id="filterBar">
     <div class="filter-row">
       <span class="filter-label">🔍 كلمة مفتاحية</span>
       <input type="text" id="filter-search" placeholder="عنوان، وصف، موقع..." oninput="renderOrders()">
@@ -270,6 +271,7 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
       <input type="text" id="filter-phone" placeholder="رقم المرسل أو المستلم" style="min-width:140px;flex:0.7" oninput="renderOrders()">
       <div id="activeFilters" style="font-size:11px;color:var(--primary);margin-right:4px;"></div>
     </div>
+  </div>
   </div>
 
   <!-- Tab Content -->
@@ -442,6 +444,13 @@ function switchCourierTab(tab){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'))
   document.getElementById('tab-'+tab).classList.add('active')
   document.querySelector('.nav-item[data-tab="'+tab+'"]').classList.add('active')
+  const wrapper=document.getElementById('filterBarWrapper')
+  if(tab==='available'){
+    document.getElementById('tab-available').insertBefore(wrapper,document.getElementById('tab-available').firstChild)
+    wrapper.style.display='block'
+  }else{
+    wrapper.style.display='none'
+  }
   if(tab==='stats')loadCourierStats()
 }
 
