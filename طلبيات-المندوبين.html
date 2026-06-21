@@ -479,27 +479,52 @@ function renderOrders(){
 
 async function loadCourierStats(){
   const el=document.getElementById('courierStats')
-  const{data}=await sbFetch('orders?select=status,amount,created_at&courier_id=eq.'+cId)
+  const{data}=await sbFetch('orders?select=status,amount,created_at,governorate&courier_id=eq.'+cId)
   if(!data||data.length===0){el.innerHTML='<div class="empty-state">لا توجد إحصائيات بعد</div>';return}
   const myOrders=data
   const delivered=myOrders.filter(o=>o.status==='delivered')
+  const cancelled=myOrders.filter(o=>o.status==='cancelled')
   const totalEarnings=delivered.reduce((s,o)=>s+(o.amount||0),0)
   const today=new Date().toISOString().slice(0,10)
+  const thisWeek=new Date();thisWeek.setDate(thisWeek.getDate()-thisWeek.getDay())
+  const weekStart=thisWeek.toISOString().slice(0,10)
+  const thisMonth=new Date();thisMonth.setDate(1)
+  const monthStart=thisMonth.toISOString().slice(0,10)
   const todayOrders=myOrders.filter(o=>o.created_at&&o.created_at.slice(0,10)===today)
+  const weekOrders=myOrders.filter(o=>o.created_at&&o.created_at.slice(0,10)>=weekStart)
+  const monthOrders=myOrders.filter(o=>o.created_at&&o.created_at.slice(0,10)>=monthStart)
   const todayEarnings=todayOrders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(o.amount||0),0)
+  const weekEarnings=weekOrders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(o.amount||0),0)
+  const monthEarnings=monthOrders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(o.amount||0),0)
+  const avgPerDelivery=delivered.length?Math.round(totalEarnings/delivered.length):0
   const statusCount={}
   myOrders.forEach(o=>{statusCount[o.status]=(statusCount[o.status]||0)+1})
   const statusLabels={pending:'قيد الانتظار',booked:'محجوز',picked_up:'مستلم',in_transit:'في الطريق',delivered:'منجز',cancelled:'ملغي'}
+  const govCount={}
+  myOrders.forEach(o=>{if(o.governorate)govCount[o.governorate]=(govCount[o.governorate]||0)+1})
+  const topGov=Object.keys(govCount).sort((a,b)=>govCount[b]-govCount[a]).slice(0,3)
   el.innerHTML='<div class="stat-grid">'
     +'<div class="stat-card"><div class="num">'+myOrders.length+'</div><div class="lbl">📦 إجمالي الطلبات</div></div>'
-    +'<div class="stat-card"><div class="num">'+todayOrders.length+'</div><div class="lbl">📅 طلبات اليوم</div></div>'
     +'<div class="stat-card"><div class="num">'+delivered.length+'</div><div class="lbl">✅ تم التوصيل</div></div>'
-    +'<div class="stat-card"><div class="num">'+totalEarnings+'</div><div class="lbl">💰 إجمالي الأرباح</div></div>'
-    +'<div class="stat-card"><div class="num">'+todayEarnings+'</div><div class="lbl">💰 أرباح اليوم</div></div>'
+    +'<div class="stat-card"><div class="num">'+cancelled.length+'</div><div class="lbl">❌ ملغية</div></div>'
+    +'<div class="stat-card"><div class="num">'+delivered.length+'/'+myOrders.length+'</div><div class="lbl">📊 نسبة الإنجاز</div></div>'
+    +'<div class="stat-card" style="background:#d1fae5"><div class="num">'+totalEarnings+'</div><div class="lbl">💰 إجمالي الأرباح</div></div>'
+    +'<div class="stat-card"><div class="num">'+avgPerDelivery+'</div><div class="lbl">📊 متوسط كل طلبية</div></div>'
     +'</div>'
+    +'<h4 style="font-size:13px;margin:14px 0 8px;color:var(--text)">📅 أرباح الفترات</h4>'
+    +'<div class="stat-grid">'
+    +'<div class="stat-card"><div class="num" style="font-size:20px">'+todayEarnings+'</div><div class="lbl">💰 اليوم ('+todayOrders.filter(o=>o.status==='delivered').length+' طلب)</div></div>'
+    +'<div class="stat-card"><div class="num" style="font-size:20px">'+weekEarnings+'</div><div class="lbl">💰 الأسبوع ('+weekOrders.filter(o=>o.status==='delivered').length+' طلب)</div></div>'
+    +'<div class="stat-card"><div class="num" style="font-size:20px">'+monthEarnings+'</div><div class="lbl">💰 الشهر ('+monthOrders.filter(o=>o.status==='delivered').length+' طلب)</div></div>'
+    +'</div>'
+    +'<h4 style="font-size:13px;margin:14px 0 8px;color:var(--text)">🔄 توزيع الحالات</h4>'
     +'<div class="stat-grid">'
     +Object.keys(statusCount).filter(k=>statusCount[k]>0).map(k=>'<div class="stat-card" style="background:var(--bg)"><div class="num" style="font-size:20px">'+statusCount[k]+'</div><div class="lbl">'+statusLabels[k]+'</div></div>').join('')
     +'</div>'
+    +(topGov.length?'<h4 style="font-size:13px;margin:14px 0 8px;color:var(--text)">📍 أكثر المحافظات</h4>'
+    +'<div class="stat-grid">'
+    +topGov.map(g=>'<div class="stat-card" style="background:var(--bg)"><div class="num" style="font-size:20px">'+govCount[g]+'</div><div class="lbl">'+g+'</div></div>').join('')
+    +'</div>':'')
 }
 
 async function bookOrder(id){
