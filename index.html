@@ -52,6 +52,13 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 .form-section h3, .orders-section h3 { font-size:17px; margin-bottom:18px; display:flex; align-items:center; gap:8px; color:var(--text); }
 .form-section h3::after { content:''; flex:1; height:1px; background:linear-gradient(to left,var(--border),transparent); }
 
+.form-section-card { background:rgba(255,255,255,0.5); border-radius:var(--radius-sm); padding:16px; margin-bottom:14px; border:1px solid var(--border); transition:var(--transition); }
+.form-section-card:hover { border-color:rgba(15,118,110,0.2); }
+.section-card-header { font-size:14px; font-weight:700; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid var(--primary-light); color:var(--primary); display:flex; align-items:center; gap:6px; }
+.section-card-header.sender-header { color:#7c3aed; border-bottom-color:#ede9fe; }
+.section-card-header.recipient-header { color:#d97706; border-bottom-color:#fef3c7; }
+.section-card-header.notes-header { color:var(--text-muted); border-bottom-color:var(--border); }
+
 .form-group { margin-bottom:16px; }
 .form-group label { display:block; font-size:12px; font-weight:600; margin-bottom:5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
 .form-group .hint { font-size:11px; color:#94a3b8; margin-top:2px; }
@@ -217,142 +224,140 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
       <h3>طلب توصيل جديد</h3>
       <div id="alert"></div>
 
-      <div class="form-group">
-        <label>عنوان الطرد</label>
-        <input type="text" id="f-title" placeholder="مثال: توصيل هاتف جوال">
-      </div>
-
-      <div class="form-group">
-        <label>وصف الطرد</label>
-        <textarea id="f-desc" rows="2" placeholder="وصف مختصر للطرد..."></textarea>
-      </div>
-
-      <!-- Weight + Type -->
-      <div class="form-row-3">
+      <!-- ====== قسم بيانات الطرد ====== -->
+      <div class="form-section-card">
+        <div class="section-card-header">📦 بيانات الطرد</div>
         <div class="form-group">
-          <label>الوزن التقريبي</label>
-          <select id="f-weight">
-            <option value="أقل من 1 كجم">أقل من 1 كجم</option>
-            <option value="1-5 كجم" selected>1-5 كجم</option>
-            <option value="5-20 كجم">5-20 كجم</option>
-            <option value="أكثر من 20 كجم">أكثر من 20 كجم</option>
+          <label>عنوان الطرد</label>
+          <input type="text" id="f-title" placeholder="مثال: توصيل هاتف جوال">
+        </div>
+        <div class="form-group">
+          <label>وصف الطرد</label>
+          <textarea id="f-desc" rows="2" placeholder="وصف مختصر للطرد..."></textarea>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>الوزن</label>
+            <select id="f-weight">
+              <option value="أقل من 1 كجم">أقل من 1 كجم</option>
+              <option value="1-5 كجم" selected>1-5 كجم</option>
+              <option value="5-20 كجم">5-20 كجم</option>
+              <option value="أكثر من 20 كجم">أكثر من 20 كجم</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>النوع</label>
+            <select id="f-type">
+              <option value="مستندات">مستندات</option>
+              <option value="إلكترونيات">إلكترونيات</option>
+              <option value="ملابس">ملابس</option>
+              <option value="مواد غذائية">مواد غذائية</option>
+              <option value="زجاجيات">زجاجيات</option>
+              <option value="أخرى" selected>أخرى</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>المبلغ</label>
+            <input type="number" id="f-amount" placeholder="0" min="0">
+          </div>
+        </div>
+        <div class="toggle-wrap">
+          <div class="toggle"><input type="checkbox" id="f-fragile"><span class="slider"></span></div>
+          <label for="f-fragile">🫙 قابل للكسر (زجاج / إلكترونيات)</label>
+        </div>
+        <div class="form-group">
+          <label>وقت التوصيل</label>
+          <select id="f-time">
+            <option value="فوري">🔴 فوري (أسرع وقت)</option>
+            <option value="خلال 3 ساعات" selected>🟡 خلال 3 ساعات</option>
+            <option value="اليوم">🟢 اليوم</option>
+            <option value="غداً">🔵 غداً</option>
           </select>
         </div>
-        <div class="form-group">
-          <label>نوع الطرد</label>
-          <select id="f-type">
-            <option value="مستندات">مستندات</option>
-            <option value="إلكترونيات">إلكترونيات</option>
-            <option value="ملابس">ملابس</option>
-            <option value="مواد غذائية">مواد غذائية</option>
-            <option value="زجاجيات">زجاجيات</option>
-            <option value="أخرى" selected>أخرى</option>
-          </select>
+        <div class="photo-upload">
+          <label style="color:var(--primary);font-weight:700;">📸 صورة الطرد *</label>
+          <div class="upload-area" onclick="document.getElementById('order-photo-input').click()" style="border-color:var(--primary);border-style:solid;">
+            <span class="upload-icon">📦</span>
+            <span class="upload-text" style="font-weight:600;">اختر صورة للطرد</span>
+            <span class="upload-hint">صورة واضحة للشحنة المراد توصيلها</span>
+            <input type="file" id="order-photo-input" accept="image/*" onchange="handlePhotoUpload(this,'order')">
+          </div>
+          <div class="photo-preview" id="order-photo-preview"></div>
+        </div>
+      </div>
+
+      <!-- ====== قسم بيانات المرسل ====== -->
+      <div class="form-section-card">
+        <div class="section-card-header sender-header">🧑 بيانات المرسل</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>المحافظة</label>
+            <select id="f-governorate" onchange="updateWilayats()">
+              <option value="">-- اختر المحافظة --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>الولاية</label>
+            <select id="f-wilayat">
+              <option value="">-- اختر الولاية --</option>
+            </select>
+          </div>
         </div>
         <div class="form-group">
-          <label>المبلغ المقدم</label>
-          <input type="number" id="f-amount" placeholder="0" min="0">
+          <label>عنوان الاستلام</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="f-pickup" placeholder="الحي، الشارع، معلم قريب" style="flex:1;">
+            <button type="button" onclick="openMapInput('f-pickup','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:18px;cursor:pointer;" title="فتح في قوقل ماب">📍</button>
+          </div>
         </div>
-      </div>
-
-      <!-- Fragile toggle -->
-      <div class="toggle-wrap">
-        <div class="toggle"><input type="checkbox" id="f-fragile"><span class="slider"></span></div>
-        <label for="f-fragile">🫙 قابل للكسر (زجاج / إلكترونيات)</label>
-      </div>
-
-      <!-- Time preference -->
-      <div class="form-group">
-        <label>وقت التوصيل التفضيلي</label>
-        <select id="f-time">
-          <option value="فوري">🔴 فوري (أسرع وقت ممكن)</option>
-          <option value="خلال 3 ساعات" selected>🟡 خلال 3 ساعات</option>
-          <option value="اليوم">🟢 اليوم</option>
-          <option value="غداً">🔵 غداً</option>
-        </select>
-      </div>
-
-      <!-- Location -->
-      <div class="form-row">
-        <div class="form-group">
-          <label>المحافظة</label>
-          <select id="f-governorate" onchange="updateWilayats()">
-            <option value="">-- اختر المحافظة --</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>الولاية</label>
-          <select id="f-wilayat">
-            <option value="">-- اختر الولاية --</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>عنوان الاستلام (تفصيلاً)</label>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="f-pickup" placeholder="اسم الحي، الشارع، معلم قريب" style="flex:1;">
-          <button type="button" onclick="openMapInput('f-pickup','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:18px;cursor:pointer;transition:var(--transition);" title="فتح في قوقل ماب">📍</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>عنوان التوصيل (تفصيلاً)</label>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="f-dropoff" placeholder="اسم الحي، الشارع، معلم قريب" style="flex:1;">
-          <button type="button" onclick="openMapInput('f-dropoff','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:18px;cursor:pointer;transition:var(--transition);" title="فتح في قوقل ماب">📍</button>
-        </div>
-      </div>
-
-      <div class="form-row">
         <div class="form-group">
           <label>رقم هاتف المرسل</label>
           <input type="tel" id="f-sender-phone" placeholder="9XXXXXXXX">
+        </div>
+        <div class="photo-upload">
+          <label>🏠 صورة بيت المرسل</label>
+          <div class="upload-area" onclick="document.getElementById('sender-photo-input').click()">
+            <span class="upload-icon">🏠</span>
+            <span class="upload-text">اختر صورة</span>
+            <span class="upload-hint">لتسهيل تحديد المنزل على المندوب</span>
+            <input type="file" id="sender-photo-input" accept="image/*" onchange="handlePhotoUpload(this,'sender')">
+          </div>
+          <div class="photo-preview" id="sender-photo-preview"></div>
+        </div>
+      </div>
+
+      <!-- ====== قسم بيانات المستلم ====== -->
+      <div class="form-section-card">
+        <div class="section-card-header recipient-header">👤 بيانات المستلم</div>
+        <div class="form-group">
+          <label>عنوان التوصيل</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="f-dropoff" placeholder="الحي، الشارع، معلم قريب" style="flex:1;">
+            <button type="button" onclick="openMapInput('f-dropoff','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:18px;cursor:pointer;" title="فتح في قوقل ماب">📍</button>
+          </div>
         </div>
         <div class="form-group">
           <label>رقم هاتف المستلم</label>
           <input type="tel" id="f-recipient-phone" placeholder="9XXXXXXXX">
         </div>
-      </div>
-
-      <!-- صورة الطلب - ضروري -->
-      <div class="photo-upload">
-        <label style="color:var(--primary);font-weight:700;">📸 صورة الطرد *</label>
-        <div class="upload-area" onclick="document.getElementById('order-photo-input').click()" style="border-color:var(--primary);border-style:solid;">
-          <span class="upload-icon">📦</span>
-          <span class="upload-text" style="font-weight:600;">اختر صورة للطرد</span>
-          <span class="upload-hint">ضروري: صورة واضحة للشحنة أو الطرد المراد توصيله</span>
-          <input type="file" id="order-photo-input" accept="image/*" onchange="handlePhotoUpload(this,'order')">
-        </div>
-        <div class="photo-preview" id="order-photo-preview"></div>
-      </div>
-
-      <div class="form-row">
         <div class="photo-upload">
-          <label>صورة بيت المرسل</label>
-          <div class="upload-area" onclick="document.getElementById('sender-photo-input').click()">
-            <span class="upload-icon">🏠</span>
-            <span class="upload-text">اختر صورة</span>
-            <span class="upload-hint">لتسهيل تحديد المنزل</span>
-            <input type="file" id="sender-photo-input" accept="image/*" onchange="handlePhotoUpload(this,'sender')">
-          </div>
-          <div class="photo-preview" id="sender-photo-preview"></div>
-        </div>
-        <div class="photo-upload">
-          <label>صورة بيت المستلم</label>
+          <label>🏠 صورة بيت المستلم</label>
           <div class="upload-area" onclick="document.getElementById('recipient-photo-input').click()">
             <span class="upload-icon">🏠</span>
             <span class="upload-text">اختر صورة</span>
-            <span class="upload-hint">لتسهيل تحديد المنزل</span>
+            <span class="upload-hint">لتسهيل تحديد المنزل على المندوب</span>
             <input type="file" id="recipient-photo-input" accept="image/*" onchange="handlePhotoUpload(this,'recipient')">
           </div>
           <div class="photo-preview" id="recipient-photo-preview"></div>
         </div>
       </div>
 
-      <div class="form-group">
-        <label>ملاحظات إضافية</label>
-        <textarea id="f-notes" rows="2" placeholder="أي معلومات إضافية للمندوب..."></textarea>
+      <!-- ====== إضافات ====== -->
+      <div class="form-section-card">
+        <div class="section-card-header notes-header">📝 ملاحظات إضافية</div>
+        <div class="form-group">
+          <textarea id="f-notes" rows="2" placeholder="أي معلومات إضافية للمندوب..."></textarea>
+        </div>
       </div>
 
       <button class="btn-submit" onclick="submitOrder()">إرسال طلب التوصيل</button>
