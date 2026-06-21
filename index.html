@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>توصيل - إرسال طرد</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root {
   --primary: #0f766e; --primary-hover: #0d9488; --primary-light: #ccfbf1; --primary-glow: rgba(15,118,110,0.15);
@@ -58,6 +60,31 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 .section-card-header.sender-header { color:#7c3aed; border-bottom-color:#ede9fe; }
 .section-card-header.recipient-header { color:#d97706; border-bottom-color:#fef3c7; }
 .section-card-header.notes-header { color:var(--text-muted); border-bottom-color:var(--border); }
+
+/* Map Modal */
+.map-modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:flex-end; justify-content:center; backdrop-filter:blur(4px); }
+.map-modal.active { display:flex; }
+.map-modal-content { background:white; border-radius:20px 20px 0 0; width:100%; max-width:500px; max-height:92vh; display:flex; flex-direction:column; animation:slideUp 0.35s ease-out; overflow:hidden; }
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.map-modal-header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border); flex-shrink:0; }
+.map-modal-header h3 { font-size:16px; margin:0; }
+.map-modal-header .btn-close { background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); padding:4px; }
+.map-modal-body { flex:1; min-height:300px; position:relative; }
+.map-modal-body #map-container { width:100%; height:100%; min-height:300px; }
+.map-modal-footer { padding:14px 20px; border-top:1px solid var(--border); display:flex; gap:10px; flex-shrink:0; flex-direction:column; }
+.map-modal-footer .addr-preview { font-size:13px; color:var(--text-muted); background:var(--bg); padding:10px 14px; border-radius:8px; min-height:20px; }
+.map-modal-footer .btn-confirm-loc { width:100%; padding:13px; background:linear-gradient(135deg,#0f766e,#0d9488); color:white; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; }
+.map-modal-footer .btn-confirm-loc:hover { opacity:0.9; }
+.map-modal-footer .btn-confirm-loc:disabled { opacity:0.5; cursor:not-allowed; }
+.drag-hint { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:white; padding:6px 16px; border-radius:20px; font-size:12px; z-index:1000; pointer-events:none; }
+@media(max-width:480px){
+  .map-modal-content { border-radius:16px 16px 0 0; max-height:95vh; }
+  .map-modal-header { padding:12px 16px; }
+  .map-modal-header h3 { font-size:14px; }
+  .map-modal-body #map-container { min-height:250px; }
+  .map-modal-footer { padding:12px 16px; }
+  .map-modal-footer .addr-preview { font-size:12px; padding:8px 12px; }
+}
 
 .form-group { margin-bottom:16px; }
 .form-group label { display:block; font-size:12px; font-weight:600; margin-bottom:5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
@@ -374,6 +401,25 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
   </div>
 </div>
 
+<!-- Map Modal -->
+<div class="map-modal" id="mapModal">
+  <div class="map-modal-content">
+    <div class="map-modal-header">
+      <h3>📍 اختر الموقع على الخريطة</h3>
+      <button class="btn-close" onclick="closeMapModal()">✕</button>
+    </div>
+    <div class="map-modal-body">
+      <div id="map-container"></div>
+      <div class="pulse-dot"></div>
+      <div class="drag-hint">🔄 اسحب المؤشر لتحديد الموقع</div>
+    </div>
+    <div class="map-modal-footer">
+      <div class="addr-preview" id="addrPreview">اسحب المؤشر على الخريطة لاختيار الموقع</div>
+      <button class="btn-confirm-loc" id="confirmLocBtn" onclick="confirmMapLocation()" disabled>تأكيد الموقع</button>
+    </div>
+  </div>
+</div>
+
 <div class="footer"><p>جميع الحقوق محفوظة © 2026 - منصة توصيل</p></div>
 
 <script>
@@ -482,47 +528,117 @@ function openMapInput(inputId,govId,wilId){
   window.open('https://www.google.com/maps/search/'+encodeURIComponent(q),'_blank')
 }
 
-function getGPSLocation(inputId,govId,wilId){
-  if(!navigator.geolocation){showAlert('الموقع غير متاح على هذا الجهاز','error');return}
-  showAlert('جاري تحديد الموقع...','success')
-  navigator.geolocation.getCurrentPosition(async function(pos){
-    const lat=pos.coords.latitude,lng=pos.coords.longitude
-    const input=document.getElementById(inputId)
-    input.value=lat+', '+lng
-    try{
-      const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ar`)
-      const d=await r.json()
-      if(d&&d.display_name){
-        input.value=d.display_name
-        const parts=d.address||{}
-        if(parts.state){
-          const govSelect=document.getElementById(govId)
-          for(let i=0;i<govSelect.options.length;i++){
-            if(govSelect.options[i].textContent.includes(parts.state)||parts.state.includes(govSelect.options[i].textContent)){
-              govSelect.value=govSelect.options[i].value;break
+let mapInstance=null, mapMarker=null, mapCurrentInputId='', mapCurrentGovId='', mapCurrentWilId=''
+
+function openMapModal(inputId,govId,wilId){
+  mapCurrentInputId=inputId; mapCurrentGovId=govId; mapCurrentWilId=wilId
+  document.getElementById('mapModal').classList.add('active')
+  document.getElementById('addrPreview').textContent='جاري تحميل الخريطة...'
+  document.getElementById('confirmLocBtn').disabled=true
+  setTimeout(initMap,200)
+}
+
+function closeMapModal(){
+  document.getElementById('mapModal').classList.remove('active')
+  if(mapInstance){mapInstance.remove();mapInstance=null;mapMarker=null}
+}
+
+function initMap(){
+  if(mapInstance){mapInstance.remove();mapInstance=null;mapMarker=null}
+  const container=document.getElementById('map-container')
+  container.style.height=container.parentElement.clientHeight+'px'
+
+  mapInstance=L.map('map-container',{zoomControl:false,attributionControl:false}).setView([23.5880,58.3829],12)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(mapInstance)
+  L.control.zoom({position:'topright'}).addTo(mapInstance)
+
+  mapMarker=L.marker([23.5880,58.3829],{draggable:true}).addTo(mapInstance)
+  reverseGeocode(23.5880,58.3829)
+
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(function(pos){
+      const lat=pos.coords.latitude,lng=pos.coords.longitude
+      mapInstance.setView([lat,lng],15)
+      mapMarker.setLatLng([lat,lng])
+      reverseGeocode(lat,lng)
+    },function(){},{enableHighAccuracy:true,timeout:8000})
+  }
+
+  mapMarker.on('dragend',function(){
+    const pos=mapMarker.getLatLng()
+    reverseGeocode(pos.lat,pos.lng)
+  })
+  mapInstance.on('click',function(e){
+    mapMarker.setLatLng(e.latlng)
+    reverseGeocode(e.latlng.lat,e.latlng.lng)
+  })
+}
+
+async function reverseGeocode(lat,lng){
+  const btn=document.getElementById('confirmLocBtn');btn.disabled=true
+  document.getElementById('addrPreview').textContent='جاري تحويل الإحداثيات...'
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ar`)
+    const d=await r.json()
+    if(d&&d.display_name){
+      document.getElementById('addrPreview').textContent=d.display_name
+      btn.disabled=false
+    }else{
+      document.getElementById('addrPreview').textContent=lat+', '+lng
+      btn.disabled=false
+    }
+  }catch(e){
+    document.getElementById('addrPreview').textContent=lat+', '+lng
+    btn.disabled=false
+  }
+}
+
+async function confirmMapLocation(){
+  const preview=document.getElementById('addrPreview')
+  const input=document.getElementById(mapCurrentInputId)
+  input.value=preview.textContent
+  let lat=23.5880,lng=58.3829
+
+  if(mapInstance&&mapMarker){
+    const pos=mapMarker.getLatLng()
+    lat=pos.lat.toFixed(6);lng=pos.lng.toFixed(6)
+  }
+
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ar`)
+    const d=await r.json()
+    if(d&&d.display_name){
+      input.value=d.display_name
+      const parts=d.address||{}
+      if(parts.state){
+        const govSelect=document.getElementById(mapCurrentGovId)
+        for(let i=0;i<govSelect.options.length;i++){
+          if(govSelect.options[i].textContent.includes(parts.state)||parts.state.includes(govSelect.options[i].textContent)){
+            govSelect.value=govSelect.options[i].value;break
+          }
+        }
+        govSelect.dispatchEvent(new Event('change'))
+      }
+      if(parts.city||parts.town||parts.village||parts.county){
+        const wil=parts.city||parts.town||parts.village||parts.county
+        const wilSelect=document.getElementById(mapCurrentWilId)
+        setTimeout(()=>{
+          for(let i=0;i<wilSelect.options.length;i++){
+            if(wilSelect.options[i].textContent.includes(wil)||wil.includes(wilSelect.options[i].textContent)){
+              wilSelect.value=wilSelect.options[i].value;break
             }
           }
-          govSelect.dispatchEvent(new Event('change'))
-        }
-        if(parts.city||parts.town||parts.village||parts.county){
-          const wil=parts.city||parts.town||parts.village||parts.county
-          const wilSelect=document.getElementById(wilId)
-          setTimeout(()=>{
-            for(let i=0;i<wilSelect.options.length;i++){
-              if(wilSelect.options[i].textContent.includes(wil)||wil.includes(wilSelect.options[i].textContent)){
-                wilSelect.value=wilSelect.options[i].value;break
-              }
-            }
-          },100)
-        }
+        },100)
       }
-    }catch(e){/* Nominatim result optional */}
-    showAlert('✅ تم تحديد الموقع','success')
-  },function(err){
-    if(err.code===1)showAlert('الرجاء السماح بتحديد الموقع في المتصفح','error')
-    else if(err.code===2)showAlert('تعذر الحصول على الموقع (GPS ضعيف)','error')
-    else showAlert('تعذر الحصول على الموقع','error')
-  },{enableHighAccuracy:true,timeout:10000})
+    }
+  }catch(e){}
+
+  closeMapModal()
+  showAlert('✅ تم تحديد الموقع','success')
+}
+
+function getGPSLocation(inputId,govId,wilId){
+  openMapModal(inputId,govId,wilId)
 }
 
 function showAlert(msg,type){
