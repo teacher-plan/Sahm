@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>توصيل - لوحة المشرف</title>
+<style>
+:root { --primary:#0f766e; --primary-hover:#0d9488; --primary-light:#ccfbf1; --secondary:#d97706; --text:#0f172a; --text-muted:#64748b; --bg:#faf8f5; --card-bg:rgba(255,255,255,0.82); --border:#e2e8f0; --shadow:0 4px 16px rgba(0,0,0,0.06); --radius:16px; --radius-sm:10px; --transition:0.3s; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.7; }
+.header { background:linear-gradient(135deg,#0f766e,#0d9488); padding:20px; text-align:center; color:white; }
+.header h1 { font-size:22px; }
+.container { max-width:1000px; margin:0 auto; padding:20px; }
+.glass { background:var(--card-bg); border-radius:var(--radius); border:1px solid rgba(255,255,255,0.6); box-shadow:var(--shadow); padding:24px; margin-bottom:20px; }
+.glass h3 { font-size:16px; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+.form-group { margin-bottom:14px; }
+.form-group label { display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--text-muted); }
+.form-group input, .form-group select { width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; }
+.form-group input:focus, .form-group select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 4px rgba(15,118,110,0.1); }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.btn { padding:11px 18px; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; transition:var(--transition); }
+.btn-primary { background:linear-gradient(135deg,#0f766e,#0d9488); color:white; }
+.btn-primary:hover { opacity:0.9; }
+.btn-danger { background:#fef2f2; color:#991b1b; }
+.btn-danger:hover { background:#fecaca; }
+.btn-sm { padding:6px 12px; font-size:12px; }
+.login-box { max-width:380px; margin:60px auto; text-align:center; }
+.login-box h2 { margin-bottom:20px; }
+.tabs { display:flex; gap:8px; margin-bottom:16px; }
+.tab { padding:8px 16px; border-radius:8px; background:var(--bg); cursor:pointer; font-size:13px; font-weight:600; border:1px solid transparent; }
+.tab.active { background:var(--primary-light); color:var(--primary); border-color:var(--primary); }
+.hidden { display:none !important; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th, td { padding:8px 10px; text-align:right; border-bottom:1px solid var(--border); }
+th { color:var(--text-muted); font-size:11px; text-transform:uppercase; }
+.courier-creds { background:var(--primary-light); padding:14px; border-radius:8px; margin:14px 0; font-size:14px; text-align:center; }
+.courier-creds .cred { font-weight:700; color:var(--primary); font-size:16px; }
+.tag { display:inline-block; padding:1px 10px; border-radius:12px; font-size:11px; font-weight:600; }
+.tag.on { background:#d1fae5; color:#065f46; }
+.tag.off { background:#fef2f2; color:#991b1b; }
+.alert-box { padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:12px; }
+.alert-box.good { background:#d1fae5; color:#065f46; }
+.alert-box.bad { background:#fef2f2; color:#991b1b; }
+.alert-box.info { background:#dbeafe; color:#1e40af; }
+@media(max-width:480px){
+  .container{padding:12px}
+  .glass{padding:16px}
+  .form-row{grid-template-columns:1fr}
+  table{font-size:12px}
+  th,td{padding:6px 8px}
+}
+</style>
+</head>
+<body>
+
+<div class="header"><h1>⚙️ لوحة المشرف - منصة توصيل</h1></div>
+
+<div class="container">
+  <!-- Admin Login -->
+  <div id="adminLogin" class="login-box glass">
+    <h2>🔐 دخول المشرف</h2>
+    <div id="loginAlert"></div>
+    <div class="form-group">
+      <label>اسم المستخدم</label>
+      <input type="text" id="adminUser" value="admin">
+    </div>
+    <div class="form-group">
+      <label>كلمة المرور</label>
+      <input type="password" id="adminPass" value="admin123">
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="adminLogin()">دخول</button>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="adminPanel" class="hidden">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;align-items:center;justify-content:space-between;">
+      <div style="display:flex;gap:8px;">
+        <div class="tabs">
+          <div class="tab active" data-tab="couriers" onclick="switchTab('couriers')">🧑 المندوبين</div>
+          <div class="tab" data-tab="orders" onclick="switchTab('orders')">📦 الطلبات</div>
+          <div class="tab" data-tab="generate" onclick="switchTab('generate')">➕ توليد مندوب</div>
+        </div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="adminLogout()">🚪 خروج</button>
+    </div>
+
+    <!-- Tab: توليد مندوب -->
+    <div id="tab-generate" class="glass">
+      <h3>➕ توليد حساب مندوب جديد</h3>
+      <div id="genAlert"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>اسم المستخدم</label>
+          <input type="text" id="genUsername" placeholder="سيتم التوليد تلقائياً" readonly style="background:var(--bg);">
+        </div>
+        <div class="form-group">
+          <label>كلمة المرور</label>
+          <input type="text" id="genPassword" placeholder="سيتم التوليد تلقائياً" readonly style="background:var(--bg);">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="generateCourier()">🔄 توليد مندوب جديد</button>
+      <div id="genResult" class="hidden courier-creds"></div>
+    </div>
+
+    <!-- Tab: المندوبين -->
+    <div id="tab-couriers" class="glass">
+      <h3>🧑 قائمة المندوبين <span id="courierCount" style="color:var(--text-muted);font-size:13px;"></span></h3>
+      <div id="couriersList"><p style="color:var(--text-muted)">جاري التحميل...</p></div>
+    </div>
+
+    <!-- Tab: الطلبات -->
+    <div id="tab-orders" class="glass">
+      <h3>📦 جميع الطلبات <span id="orderCount" style="color:var(--text-muted);font-size:13px;"></span></h3>
+      <div id="ordersList"><p style="color:var(--text-muted)">جاري التحميل...</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://qwnwrbbsozegbhwsktsa.supabase.co'
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3bndyYmJzb3plZ2Jod3NrdHNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNjMzMzAsImV4cCI6MjA5NzYzOTMzMH0.UnvN3VHtoSz-DRFCMvnhJ6feoi4ao41sDB_a3GRn8WE'
+const SB_HEADERS={'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Accept':'application/json'}
+
+async function sbFetch(path,opts={}){
+  try{
+    const r=await fetch(SUPABASE_URL+'/rest/v1/'+path,{headers:{...SB_HEADERS,...opts.headers},...opts})
+    if(!r.ok)throw new Error(r.statusText)
+    if(opts.method==='DELETE'||opts.method==='PATCH'&&!opts.returnData)return{data:null,error:null}
+    return{data:await r.json(),error:null}
+  }catch(e){return{data:null,error:e}}
+}
+
+function showAlert(id,msg,type){
+  document.getElementById(id).innerHTML='<div class="alert-box '+type+'">'+msg+'</div>'
+  setTimeout(()=>{const a=document.querySelector('#'+id+' .alert-box');if(a)a.remove()},4000)
+}
+
+function genRandomPassword(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let p='';for(let i=0;i<8;i++)p+=c[Math.floor(Math.random()*c.length)];return p}
+function genRandomUsername(){const c='abcdefghjkmnpqrstuvwxyz23456789';let u='';for(let i=0;i<6;i++)u+=c[Math.floor(Math.random()*c.length)];return'sahm_'+u}
+
+function adminLogin(){
+  const u=document.getElementById('adminUser').value.trim()
+  const p=document.getElementById('adminPass').value.trim()
+  if(u==='admin'&&p==='admin123'){
+    sessionStorage.setItem('admin_logged','true')
+    document.getElementById('adminLogin').classList.add('hidden')
+    document.getElementById('adminPanel').classList.remove('hidden')
+    loadCouriers();loadOrders();switchTab('couriers')
+    document.getElementById('genUsername').value=genRandomUsername()
+    document.getElementById('genPassword').value=genRandomPassword()
+  }else{
+    showAlert('loginAlert','❌ اسم المستخدم أو كلمة المرور خطأ','bad')
+  }
+  return false
+}
+
+function adminLogout(){sessionStorage.removeItem('admin_logged');location.reload()}
+
+// Auto-login if session exists
+if(sessionStorage.getItem('admin_logged')==='true'){adminLogin()}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'))
+  document.querySelector('.tab[data-tab="'+tab+'"]').classList.add('active')
+  document.querySelectorAll('[id^="tab-"]').forEach(t=>t.classList.add('hidden'))
+  document.getElementById('tab-'+tab).classList.remove('hidden')
+  if(tab==='generate'){document.getElementById('genUsername').value=genRandomUsername();document.getElementById('genPassword').value=genRandomPassword()}
+}
+
+async function generateCourier(){
+  const username=document.getElementById('genUsername').value
+  const password=document.getElementById('genPassword').value
+  const btn=document.querySelector('#tab-generate .btn');btn.disabled=true;btn.textContent='⏳ جاري...'
+  const{data,error}=await sbFetch('couriers',{method:'POST',body:JSON.stringify({username,password,name:'',phone:'',governorate:'',vehicle_type:'',has_profile:false,is_active:true})})
+  if(error){showAlert('genAlert','❌ فشل التوليد: '+error.message,'bad');btn.disabled=false;btn.textContent='🔄 توليد مندوب جديد';return}
+  document.getElementById('genResult').classList.remove('hidden')
+  document.getElementById('genResult').innerHTML='✅ <strong>تم التوليد بنجاح!</strong><br><br>👤 اسم المستخدم: <span class="cred">'+username+'</span><br>🔑 كلمة المرور: <span class="cred">'+password+'</span><br><br><span style="font-size:12px;color:var(--text-muted);">سلم هذه البيانات للمندوب لتسجيل الدخول</span>'
+  document.getElementById('genUsername').value=genRandomUsername()
+  document.getElementById('genPassword').value=genRandomPassword()
+  btn.disabled=false;btn.textContent='🔄 توليد مندوب جديد'
+  loadCouriers()
+}
+
+async function loadCouriers(){
+  const{data}=await sbFetch('couriers?select=*&order=created_at.desc')
+  if(!data)return
+  const el=document.getElementById('couriersList')
+  document.getElementById('courierCount').textContent='('+data.length+')'
+  if(data.length===0){el.innerHTML='<p style="color:var(--text-muted)">لا يوجد مندوبين</p>';return}
+  const rows=data.map(c=>{
+    const active=c.is_active?'<span class="tag on">نشط</span>':'<span class="tag off">موقوف</span>'
+    const profile=c.has_profile?'<span style="color:#065f46">✅ مكتمل</span>':'<span style="color:#991b1b">⏳ ناقص</span>'
+    return '<tr><td>'+esc(c.username)+'</td><td>'+esc(c.name||'-')+'</td><td>'+esc(c.phone||'-')+'</td><td>'+active+'</td><td>'+profile+'</td><td><button class="btn btn-sm '+(c.is_active?'btn-danger':'btn-primary')+'" onclick="toggleCourier(\''+c.id+'\','+(!c.is_active)+')">'+(c.is_active?'إيقاف':'تفعيل')+'</button></td></tr>'
+  }).join('')
+  el.innerHTML='<table><thead><tr><th>المستخدم</th><th>الاسم</th><th>الهاتف</th><th>الحالة</th><th>الملف</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'
+}
+
+async function toggleCourier(id,activate){
+  await sbFetch('couriers?id=eq.'+id,{method:'PATCH',body:JSON.stringify({is_active:activate})})
+  loadCouriers()
+}
+
+async function loadOrders(){
+  const{data}=await sbFetch('orders?select=*&order=created_at.desc')
+  if(!data)return
+  const el=document.getElementById('ordersList')
+  document.getElementById('orderCount').textContent='('+data.length+')'
+  if(data.length===0){el.innerHTML='<p style="color:var(--text-muted)">لا توجد طلبات</p>';return}
+  const rows=data.map(o=>{
+    const statusMap={pending:'⏳',booked:'📌',picked_up:'📦',in_transit:'🚚',delivered:'✅',cancelled:'❌'}
+    return '<tr><td>'+esc(o.tracking||'-')+'</td><td>'+esc(o.title||'-')+'</td><td>'+esc(o.sender_phone||'-')+'</td><td>'+esc(o.governorate||'-')+'</td><td>'+(statusMap[o.status]||'')+' '+esc(o.status||'-')+'</td><td>'+(o.courier_name?esc(o.courier_name):'-')+'</td><td>'+(o.status==='pending'?'<button class="btn btn-sm btn-danger" onclick="adminCancel(\''+o.id+'\')">إلغاء</button>':'')+'</td></tr>'
+  }).join('')
+  el.innerHTML='<table><thead><tr><th>التتبع</th><th>الطرد</th><th>المرسل</th><th>المحافظة</th><th>الحالة</th><th>المندوب</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'
+}
+
+async function adminCancel(id){
+  if(!confirm('إلغاء هذا الطلب؟'))return
+  await sbFetch('orders?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:'cancelled'})})
+  loadOrders()
+}
+
+function esc(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+</script>
+</body>
+</html>

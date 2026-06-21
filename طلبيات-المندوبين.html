@@ -27,8 +27,13 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 
 .header { background:linear-gradient(135deg,#0f766e 0%,#0d9488 100%); padding:24px 20px; text-align:center; position:relative; overflow:hidden; }
 .header::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); opacity:0.4; }
+.header { display:flex; align-items:center; justify-content:center; flex-direction:column; }
 .header h1 { font-size:26px; color:white; position:relative; z-index:1; display:flex; align-items:center; justify-content:center; gap:10px; text-shadow:0 2px 8px rgba(0,0,0,0.1); animation:fadeInDown 0.6s ease-out; }
 .header p { font-size:14px; color:rgba(255,255,255,0.8); margin-top:4px; position:relative; z-index:1; animation:fadeInDown 0.8s ease-out; }
+.header-bar { display:flex; align-items:center; justify-content:space-between; width:100%; max-width:1100px; margin:0 auto; padding:12px 20px; }
+.header-bar .name { color:white; font-size:14px; font-weight:600; }
+.header-bar .logout-btn { background:rgba(255,255,255,0.15); color:white; border:1px solid rgba(255,255,255,0.3); padding:6px 14px; border-radius:8px; font-size:13px; cursor:pointer; transition:var(--transition); }
+.header-bar .logout-btn:hover { background:rgba(255,255,255,0.25); }
 @keyframes fadeInDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
 
 .container { max-width:1100px; margin:0 auto; padding:32px 20px; }
@@ -181,6 +186,10 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 <div class="bg-art bg-lines"><svg viewBox="0 0 200 400"><path d="M200 50C160 20 120 80 80 40C40 0 0 60 0 60" stroke="#0f766e" stroke-width="1.5"/><path d="M200 130C140 100 100 160 50 110C20 80 0 120 0 120" stroke="#0f766e" stroke-width="1.5"/><path d="M200 220C150 190 110 250 70 210C30 170 0 220 0 220" stroke="#d97706" stroke-width="1.5"/><path d="M200 310C140 280 100 340 50 300C20 270 0 310 0 310" stroke="#0f766e" stroke-width="1.5"/><path d="M200 380C160 360 120 390 80 370C40 350 0 380 0 380" stroke="#d97706" stroke-width="1" stroke-dasharray="4 4"/></svg></div>
 
 <div class="header">
+  <div class="header-bar">
+    <span class="name" id="courierName">👤 المندوب</span>
+    <button class="logout-btn" onclick="logout()">🚪 خروج</button>
+  </div>
   <h1>🚚 توصيل</h1>
   <p>صفحة المندوبين - طلبيات التوصيل في سلطنة عمان</p>
 </div>
@@ -243,6 +252,16 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 <div class="footer"><p>جميع الحقوق محفوظة © 2026 - منصة توصيل</p></div>
 
 <script>
+// التحقق من تسجيل الدخول
+const cId=sessionStorage.getItem('courier_id');const cName=sessionStorage.getItem('courier_name');const cUser=sessionStorage.getItem('courier_username')
+if(!cId||!cUser){window.location.href='تسجيل-دخول-مندوب.html'}
+document.getElementById('courierName').textContent='👤 '+cName
+
+function logout(){
+  sessionStorage.removeItem('courier_id');sessionStorage.removeItem('courier_name');sessionStorage.removeItem('courier_username')
+  window.location.href='تسجيل-دخول-مندوب.html'
+}
+
 const SUPABASE_URL='https://qwnwrbbsozegbhwsktsa.supabase.co'
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3bndyYmJzb3plZ2Jod3NrdHNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNjMzMzAsImV4cCI6MjA5NzYzOTMzMH0.UnvN3VHtoSz-DRFCMvnhJ6feoi4ao41sDB_a3GRn8WE'
 const DB_KEY='tawseel_orders'
@@ -337,10 +356,10 @@ async function bookOrder(id){
   if(!phone)return
   if(useLocalFallback){
     const o=orders.find(x=>x.id===id);if(!o)return
-    o.status='booked';o.booked_by=phone;o.booked_at=new Date().toISOString();saveLocalOrders()
+    o.status='booked';o.booked_by=phone;o.booked_at=new Date().toISOString();o.courier_id=cId;o.courier_name=cName;saveLocalOrders()
     showAlert('تم حجز الطلبية بنجاح!');renderOrders();return
   }
-  const{error}=await sbUpdateOrder(id,{status:'booked',booked_by:phone,booked_at:new Date().toISOString()})
+  const{error}=await sbUpdateOrder(id,{status:'booked',booked_by:phone,booked_at:new Date().toISOString(),courier_id:cId,courier_name:cName})
   if(error){showAlert('خطأ: '+error.message);return}
   showAlert('تم حجز الطلبية بنجاح!');fetchOrders()
 }
