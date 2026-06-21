@@ -42,6 +42,12 @@ th { color:var(--text-muted); font-size:11px; text-transform:uppercase; }
 .alert-box.good { background:#d1fae5; color:#065f46; }
 .alert-box.bad { background:#fef2f2; color:#991b1b; }
 .alert-box.info { background:#dbeafe; color:#1e40af; }
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.stat-card{background:var(--primary-light);border-radius:var(--radius-sm);padding:14px;text-align:center}
+.stat-card .num{font-size:26px;font-weight:700;color:var(--primary)}
+.stat-card .lbl{font-size:12px;color:var(--text-muted);margin-top:2px}
+.stat-bar{display:flex;height:24px;border-radius:12px;overflow:hidden;margin:10px 0}
+.stat-bar div{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:white;transition:0.3s}
 @media(max-width:480px){
   .container{padding:12px}
   .glass{padding:16px}
@@ -77,6 +83,7 @@ th { color:var(--text-muted); font-size:11px; text-transform:uppercase; }
       <div style="display:flex;gap:8px;">
         <div class="tabs">
           <div class="tab active" data-tab="couriers" onclick="switchTab('couriers')">🧑 المندوبين</div>
+          <div class="tab" data-tab="stats" onclick="switchTab('stats')">📊 الإحصائيات</div>
           <div class="tab" data-tab="orders" onclick="switchTab('orders')">📦 الطلبات</div>
           <div class="tab" data-tab="generate" onclick="switchTab('generate')">➕ توليد مندوب</div>
         </div>
@@ -104,6 +111,12 @@ th { color:var(--text-muted); font-size:11px; text-transform:uppercase; }
         <h4 style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">📋 آخر الحسابات المولدة</h4>
         <div id="genList" style="font-size:13px;color:var(--text-muted);">-</div>
       </div>
+    </div>
+
+    <!-- Tab: الإحصائيات -->
+    <div id="tab-stats" class="glass">
+      <h3>📊 إحصائيات شاملة</h3>
+      <div id="statsContent" style="font-size:13px;color:var(--text-muted);">جاري التحميل...</div>
     </div>
 
     <!-- Tab: المندوبين -->
@@ -152,7 +165,7 @@ function adminLogin(){
     sessionStorage.setItem('admin_logged','true')
     document.getElementById('adminLogin').classList.add('hidden')
     document.getElementById('adminPanel').classList.remove('hidden')
-    loadCouriers();loadOrders();switchTab('couriers')
+    loadCouriers();loadOrders();loadStats();switchTab('couriers')
     document.getElementById('genUsername').value=genRandomUsername()
     document.getElementById('genPassword').value=genRandomPassword()
   }else{
@@ -172,6 +185,7 @@ function switchTab(tab){
   document.querySelectorAll('[id^="tab-"]').forEach(t=>t.classList.add('hidden'))
   document.getElementById('tab-'+tab).classList.remove('hidden')
   if(tab==='generate'){document.getElementById('genUsername').value=genRandomUsername();document.getElementById('genPassword').value=genRandomPassword();loadGeneratedCouriers()}
+  if(tab==='stats')loadStats()
 }
 
 async function generateCourier(){
@@ -254,6 +268,48 @@ async function adminDelete(id){
   const{data,error}=await sbFetch('orders?id=eq.'+id,{method:'DELETE'})
   if(error){alert('❌ فشل الحذف: '+error.message);return}
   loadOrders()
+}
+
+async function loadStats(){
+  const el=document.getElementById('statsContent')
+  const[ordersRes,couriersRes]=await Promise.all([
+    sbFetch('orders?select=status,governorate,created_at'),
+    sbFetch('couriers?select=is_active,has_profile')
+  ])
+  const orders=ordersRes.data||[]
+  const couriers=couriersRes.data||[]
+  const today=new Date().toISOString().slice(0,10)
+  const todayOrders=orders.filter(o=>o.created_at&&o.created_at.slice(0,10)===today)
+  const statusCount={pending:0,booked:0,picked_up:0,in_transit:0,delivered:0,cancelled:0}
+  orders.forEach(o=>{if(statusCount[o.status]!==undefined)statusCount[o.status]++})
+  const govMap={}
+  orders.forEach(o=>{if(o.governorate){govMap[o.governorate]=(govMap[o.governorate]||0)+1}})
+  const statusColors={pending:'#f59e0b',booked:'#3b82f6',picked_up:'#8b5cf6',in_transit:'#06b6d4',delivered:'#10b981',cancelled:'#ef4444'}
+  const statusLabels={pending:'قيد الانتظار',booked:'محجوز',picked_up:'تم الاستلام',in_transit:'في الطريق',delivered:'تم التوصيل',cancelled:'ملغي'}
+  const total=orders.length
+  const barHtml=Object.keys(statusCount).filter(k=>statusCount[k]>0).map(k=>{
+    const pct=total?Math.round(statusCount[k]/total*100):0
+    return '<div style="width:'+pct+'%;background:'+statusColors[k]+'">'+(pct>8?statusCount[k]:'')+'</div>'
+  }).join('')
+  const activeCouriers=couriers.filter(c=>c.is_active).length
+  const fullProfile=couriers.filter(c=>c.has_profile).length
+  el.innerHTML='<div class="stat-grid">'
+    +'<div class="stat-card"><div class="num">'+total+'</div><div class="lbl">📦 إجمالي الطلبات</div></div>'
+    +'<div class="stat-card"><div class="num">'+todayOrders.length+'</div><div class="lbl">📅 طلبات اليوم</div></div>'
+    +'<div class="stat-card"><div class="num">'+couriers.length+'</div><div class="lbl">🧑 إجمالي المندوبين</div></div>'
+    +'<div class="stat-card"><div class="num">'+activeCouriers+'</div><div class="lbl">✅ المندوبين النشطين</div></div>'
+    +'<div class="stat-card"><div class="num">'+fullProfile+'</div><div class="lbl">📋 مكتملي الملف</div></div>'
+    +'<div class="stat-card"><div class="num">'+(couriers.length-activeCouriers)+'</div><div class="lbl">⛔ المندوبين الموقوفين</div></div>'
+    +'</div>'
+    +'<h4 style="font-size:13px;margin-bottom:6px;color:var(--text)">📊 توزيع الطلبات حسب الحالة</h4>'
+    +(total?'<div class="stat-bar">'+barHtml+'</div>':'<p style="color:var(--text-muted)">لا توجد طلبات</p>')
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 14px">'
+    +Object.keys(statusCount).filter(k=>statusCount[k]>0).map(k=>'<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+statusColors[k]+'20;color:'+statusColors[k]+'">'+statusLabels[k]+' ('+statusCount[k]+')</span>').join('')
+    +'</div>'
+    +'<h4 style="font-size:13px;margin-bottom:6px;color:var(--text)">📍 الطلبات حسب المحافظة</h4>'
+    +(Object.keys(govMap).length?'<table style="font-size:12px"><thead><tr><th>المحافظة</th><th>العدد</th></tr></thead><tbody>'
+    +Object.keys(govMap).sort((a,b)=>govMap[b]-govMap[a]).map(g=>'<tr><td>'+esc(g)+'</td><td>'+govMap[g]+'</td></tr>').join('')
+    +'</tbody></table>':'<p style="color:var(--text-muted)">لا توجد طلبات</p>')
 }
 
 async function loadGeneratedCouriers(){
