@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>توصيل - طلبيات المندوبين</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --primary: #0f766e; --primary-hover: #0d9488; --primary-light: #ccfbf1; --primary-glow: rgba(15,118,110,0.15);
@@ -247,8 +246,30 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 const SUPABASE_URL='https://qwnwrbbsozegbhwsktsa.supabase.co'
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3bndyYmJzb3plZ2Jod3NrdHNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNjMzMzAsImV4cCI6MjA5NzYzOTMzMH0.UnvN3VHtoSz-DRFCMvnhJ6feoi4ao41sDB_a3GRn8WE'
 const DB_KEY='tawseel_orders'
-let supabase=null; let useLocalFallback=false
-try{supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){useLocalFallback=true}
+const SB_HEADERS={'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Accept':'application/json'}
+let useLocalFallback=false
+
+async function sbFetch(path,opts={}){
+  const url=SUPABASE_URL+'/rest/v1/'+path
+  try{
+    const r=await fetch(url,{headers:{...SB_HEADERS,...opts.headers},...opts})
+    if(!r.ok)throw new Error(r.status+' '+r.statusText)
+    const data=await r.json()
+    return{data,error:null}
+  }catch(e){return{data:null,error:e}}
+}
+
+async function sbFetchOrders(){
+  const{data,error}=await sbFetch('orders?select=*&order=created_at.desc')
+  if(error){useLocalFallback=true;loadLocalOrders();return}
+  orders=data||[]; renderOrders()
+}
+
+async function sbUpdateOrder(id,updates){
+  const{data,error}=await sbFetch('orders?id=eq.'+id,{method:'PATCH',body:JSON.stringify(updates)})
+  if(error){useLocalFallback=true;return{data:null,error}}
+  return{data,error:null}
+}
 
 const OMAN_DATA={"مسقط":["مسقط","مطرح","العامرات","بوشر","السيب","قريات"],"ظفار":["صلالة","طاقة","مرباط","رخيوت","ثمريت","ضلكوت","المزيونة","مقشن","شليم وجزر الحلانيات","سدح"],"مسندم":["خصب","دبا","بخاء","مدحاء"],"البريمي":["البريمي","محضة","السنينة"],"الداخلية":["نزوى","سمائل","بهلا","أدم","الحمراء","منح","إزكي","بدبد","الجبل الأخضر"],"الظاهرة":["عبري","ينقل","ضنك"],"شمال الباطنة":["صحار","شناص","لوى","صحم","الخابورة","السويق"],"جنوب الباطنة":["الرستاق","المصنعة","بركاء","نخل","وادي المعاول","العوابي"],"شمال الشرقية":["إبراء","المضيبي","بدية","القابل","وادي بني خالد","دماء والطائيين","سناو"],"جنوب الشرقية":["صور","جعلان بني بو علي","جعلان بني بو حسن","الكامل والوافي","مصيرة"],"الوسطى":["هيما","محوت","الدقم","الجازر"]}
 
@@ -259,9 +280,8 @@ function loadLocalOrders(){try{orders=JSON.parse(localStorage.getItem(DB_KEY))||
 function saveLocalOrders(){localStorage.setItem(DB_KEY,JSON.stringify(orders))}
 
 async function fetchOrders(){
-  if(useLocalFallback||!supabase){loadLocalOrders();renderOrders();return}
-  try{const{data}=await supabase.from('orders').select('*').order('created_at',{ascending:false});orders=data||[]}catch(e){loadLocalOrders()}
-  renderOrders()
+  if(useLocalFallback){loadLocalOrders();renderOrders();return}
+  await sbFetchOrders()
 }
 
 const filterGov=document.getElementById('filter-gov')
@@ -315,14 +335,12 @@ function renderOrders(){
 async function bookOrder(id){
   const phone=prompt('الرجاء إدخال رقم هاتفك للتواصل:')
   if(!phone)return
-  if(useLocalFallback||!supabase){
+  if(useLocalFallback){
     const o=orders.find(x=>x.id===id);if(!o)return
     o.status='booked';o.booked_by=phone;o.booked_at=new Date().toISOString();saveLocalOrders()
     showAlert('تم حجز الطلبية بنجاح!');renderOrders();return
   }
-  const {error}=await supabase.from('orders').update({
-    status:'booked',booked_by:phone,booked_at:new Date().toISOString()
-  }).eq('id',id)
+  const{error}=await sbUpdateOrder(id,{status:'booked',booked_by:phone,booked_at:new Date().toISOString()})
   if(error){showAlert('خطأ: '+error.message);return}
   showAlert('تم حجز الطلبية بنجاح!');fetchOrders()
 }
@@ -332,12 +350,12 @@ async function updateStatus(id,newStatus){
   if(newStatus==='picked_up')updates.picked_up_at=new Date().toISOString()
   else if(newStatus==='in_transit')updates.in_transit_at=new Date().toISOString()
   else if(newStatus==='delivered')updates.delivered_at=new Date().toISOString()
-  if(useLocalFallback||!supabase){
+  if(useLocalFallback){
     const o=orders.find(x=>x.id===id);if(!o)return
     Object.assign(o,updates);saveLocalOrders()
     showAlert('✅ تم تحديث حالة الطلب: '+STATUS_MAP[newStatus]);renderOrders();return
   }
-  const {error}=await supabase.from('orders').update(updates).eq('id',id)
+  const{error}=await sbUpdateOrder(id,updates)
   if(error){showAlert('خطأ: '+error.message);return}
   showAlert('✅ تم تحديث حالة الطلب: '+STATUS_MAP[newStatus]);fetchOrders()
 }

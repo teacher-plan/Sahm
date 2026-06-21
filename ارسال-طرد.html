@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>توصيل - إرسال طرد</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --primary: #0f766e; --primary-hover: #0d9488; --primary-light: #ccfbf1; --primary-glow: rgba(15,118,110,0.15);
@@ -372,8 +371,46 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 const SUPABASE_URL='https://qwnwrbbsozegbhwsktsa.supabase.co'
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3bndyYmJzb3plZ2Jod3NrdHNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNjMzMzAsImV4cCI6MjA5NzYzOTMzMH0.UnvN3VHtoSz-DRFCMvnhJ6feoi4ao41sDB_a3GRn8WE'
 const DB_KEY='tawseel_orders'
-let supabase=null; let useLocalFallback=false
-try{supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){useLocalFallback=true;console.warn('Supabase غير متاح, استخدام التخزين المحلي')}
+const SB_HEADERS={'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Accept':'application/json'}
+let useLocalFallback=false
+
+async function sbFetch(path,opts={}){
+  const url=SUPABASE_URL+'/rest/v1/'+path
+  try{
+    const r=await fetch(url,{headers:{...SB_HEADERS,...opts.headers},...opts})
+    if(!r.ok)throw new Error(r.status+' '+r.statusText)
+    if(opts.method==='DELETE'||opts.method==='PATCH'&&!opts.returnData)return{data:null,error:null}
+    const data=await r.json()
+    return{data,error:null}
+  }catch(e){return{data:null,error:e}}
+}
+
+async function sbUpload(bucket,path,file){
+  const url=SUPABASE_URL+'/storage/v1/object/'+bucket+'/'+path
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':file.type},body:file})
+    if(!r.ok){const e=await r.json();throw new Error(e.error||r.statusText)}
+    return SUPABASE_URL+'/storage/v1/object/public/'+bucket+'/'+path
+  }catch(e){console.error('Upload error:',e);return''}
+}
+
+async function sbFetchOrders(){
+  const{data,error}=await sbFetch('orders?select=*&order=created_at.desc')
+  if(error){useLocalFallback=true;loadLocalOrders();return}
+  orders=data||[]; renderMyOrders()
+}
+
+async function sbInsertOrder(order){
+  const{data,error}=await sbFetch('orders?select=tracking',{method:'POST',body:JSON.stringify(order)})
+  if(error){useLocalFallback=true;return{data:null,error}}
+  return{data,error:null}
+}
+
+async function sbUpdateOrder(id,updates){
+  const{data,error}=await sbFetch('orders?id=eq.'+id,{method:'PATCH',body:JSON.stringify(updates)})
+  if(error){useLocalFallback=true;return{data:null,error}}
+  return{data,error:null}
+}
 
 const OMAN_DATA={"مسقط":["مسقط","مطرح","العامرات","بوشر","السيب","قريات"],"ظفار":["صلالة","طاقة","مرباط","رخيوت","ثمريت","ضلكوت","المزيونة","مقشن","شليم وجزر الحلانيات","سدح"],"مسندم":["خصب","دبا","بخاء","مدحاء"],"البريمي":["البريمي","محضة","السنينة"],"الداخلية":["نزوى","سمائل","بهلا","أدم","الحمراء","منح","إزكي","بدبد","الجبل الأخضر"],"الظاهرة":["عبري","ينقل","ضنك"],"شمال الباطنة":["صحار","شناص","لوى","صحم","الخابورة","السويق"],"جنوب الباطنة":["الرستاق","المصنعة","بركاء","نخل","وادي المعاول","العوابي"],"شمال الشرقية":["إبراء","المضيبي","بدية","القابل","وادي بني خالد","دماء والطائيين","سناو"],"جنوب الشرقية":["صور","جعلان بني بو علي","جعلان بني بو حسن","الكامل والوافي","مصيرة"],"الوسطى":["هيما","محوت","الدقم","الجازر"]}
 
@@ -384,9 +421,8 @@ function loadLocalOrders(){try{orders=JSON.parse(localStorage.getItem(DB_KEY))||
 function saveLocalOrders(){localStorage.setItem(DB_KEY,JSON.stringify(orders))}
 
 async function fetchOrders(){
-  if(useLocalFallback||!supabase){loadLocalOrders();renderMyOrders();return}
-  try{const{data}=await supabase.from('orders').select('*').order('created_at',{ascending:false});orders=data||[]}catch(e){loadLocalOrders()}
-  renderMyOrders()
+  if(useLocalFallback||typeof fetch==='undefined'){loadLocalOrders();renderMyOrders();return}
+  await sbFetchOrders()
 }
 
 // Governorates
@@ -420,13 +456,10 @@ function removePhoto(id){
 }
 
 async function uploadPhoto(file,folder){
-  if(!file)return''
+  if(!file||useLocalFallback)return''
   const ext=file.name.split('.').pop()
   const name=folder+'_'+Date.now()+'.'+ext
-  const {error}=await supabase.storage.from('order-photos').upload(name,file)
-  if(error){console.error('Upload error:',error);return''}
-  const {data:{publicUrl}}=supabase.storage.from('order-photos').getPublicUrl(name)
-  return publicUrl
+  return await sbUpload('order-photos',name,file)
 }
 
 function openMapInput(inputId,govId,wilId){
@@ -474,7 +507,9 @@ async function submitOrder(){
 
   const btn=document.querySelector('.btn-submit');btn.disabled=true;btn.textContent='جاري الإرسال...'
 
-  if(useLocalFallback||!supabase){
+  let orderPhotoUrl='',senderPhotoUrl='',recipientPhotoUrl=''
+
+  if(useLocalFallback){
     const r=new FileReader()
     r.onload=function(){
       const order={
@@ -495,10 +530,9 @@ async function submitOrder(){
     return
   }
 
-  let orderPhotoUrl='',senderPhotoUrl='',recipientPhotoUrl=''
-  try{orderPhotoUrl=await uploadPhoto(orderPhotoFile,'order')}catch(e){}
-  try{senderPhotoUrl=await uploadPhoto(senderPhotoFile,'sender')}catch(e){}
-  try{recipientPhotoUrl=await uploadPhoto(recipientPhotoFile,'recipient')}catch(e){}
+  orderPhotoUrl=await uploadPhoto(orderPhotoFile,'order')
+  senderPhotoUrl=await uploadPhoto(senderPhotoFile,'sender')
+  recipientPhotoUrl=await uploadPhoto(recipientPhotoFile,'recipient')
 
   const order={
     title,description:desc,amount:parseFloat(amount),
@@ -509,8 +543,8 @@ async function submitOrder(){
     notes,status:'pending'
   }
 
-  const {data,error}=await supabase.from('orders').insert([order]).select()
-  if(error){showAlert('خطأ: '+error.message,'error');btn.disabled=false;btn.textContent='إرسال طلب التوصيل';return}
+  const{data,error}=await sbInsertOrder(order)
+  if(error||!data){showAlert('خطأ في الإرسال، تم التبديل للتخزين المحلي','error');useLocalFallback=true;btn.disabled=false;btn.textContent='إرسال طلب التوصيل';return}
 
   resetForm()
   btn.disabled=false;btn.textContent='إرسال طلب التوصيل'
@@ -532,12 +566,12 @@ function resetForm(){
 
 async function cancelOrder(id){
   if(!confirm('هل أنت متأكد من إلغاء هذا الطلب؟'))return
-  if(useLocalFallback||!supabase){
+  if(useLocalFallback){
     const o=orders.find(x=>x.id===id);if(!o)return
     o.status='cancelled';saveLocalOrders();renderMyOrders()
     showAlert('تم إلغاء الطلب','error');return
   }
-  const {error}=await supabase.from('orders').update({status:'cancelled'}).eq('id',id)
+  const{error}=await sbUpdateOrder(id,{status:'cancelled'})
   if(error){showAlert('خطأ: '+error.message,'error');return}
   showAlert('تم إلغاء الطلب','error')
   fetchOrders()
