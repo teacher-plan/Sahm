@@ -176,7 +176,7 @@ function switchTab(tab){
 
 async function generateCourier(){
   const alertEl=document.getElementById('genAlert')
-  alertEl.innerHTML='<div class="alert-box info">⏳ جاري تجهيز الحساب...</div>'
+  alertEl.innerHTML=''
   document.getElementById('genResult').classList.add('hidden')
   const btn=document.querySelector('#tab-generate .btn');btn.disabled=true;btn.textContent='⏳ جاري...'
   let username,password
