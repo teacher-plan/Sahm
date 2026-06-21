@@ -440,9 +440,10 @@ const SB_HEADERS={'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'
 let useLocalFallback=false
 
 async function sbFetch(path,opts={}){
+  const{headers:extraHeaders,...rest}=opts
   const url=SUPABASE_URL+'/rest/v1/'+path
   try{
-    const r=await fetch(url,{headers:{...SB_HEADERS,...opts.headers},...opts})
+    const r=await fetch(url,{headers:{...SB_HEADERS,...extraHeaders},...rest})
     if(!r.ok)throw new Error(r.status+' '+r.statusText)
     if(opts.method==='DELETE'||opts.method==='PATCH'&&!opts.returnData)return{data:null,error:null}
     const data=await r.json()
