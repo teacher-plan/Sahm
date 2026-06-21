@@ -305,10 +305,12 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
         </div>
         <div class="form-group">
           <label>عنوان الاستلام</label>
-          <div style="display:flex;gap:8px;">
+          <div style="display:flex;gap:6px;">
             <input type="text" id="f-pickup" placeholder="الحي، الشارع، معلم قريب" style="flex:1;">
-            <button type="button" onclick="openMapInput('f-pickup','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:18px;cursor:pointer;" title="فتح في قوقل ماب">📍</button>
+            <button type="button" onclick="getGPSLocation('f-pickup','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#dbeafe;font-size:16px;cursor:pointer;" title="📍 موقعي الحالي"></button>
+            <button type="button" onclick="openMapInput('f-pickup','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:16px;cursor:pointer;" title="فتح في قوقل ماب">🗺️</button>
           </div>
+          <span style="font-size:11px;color:#94a3b8;margin-top:2px;display:block;">📍 اضغط لتحديد موقعك الحالي  |  🗺️ بحث في الخريطة</span>
         </div>
         <div class="form-group">
           <label>رقم هاتف المرسل</label>
@@ -331,10 +333,12 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
         <div class="section-card-header recipient-header">👤 بيانات المستلم</div>
         <div class="form-group">
           <label>عنوان التوصيل</label>
-          <div style="display:flex;gap:8px;">
+          <div style="display:flex;gap:6px;">
             <input type="text" id="f-dropoff" placeholder="الحي، الشارع، معلم قريب" style="flex:1;">
-            <button type="button" onclick="openMapInput('f-dropoff','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:18px;cursor:pointer;" title="فتح في قوقل ماب">📍</button>
+            <button type="button" onclick="getGPSLocation('f-dropoff','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#dbeafe;font-size:16px;cursor:pointer;" title="📍 موقعي الحالي">📍</button>
+            <button type="button" onclick="openMapInput('f-dropoff','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:16px;cursor:pointer;" title="فتح في قوقل ماب">🗺️</button>
           </div>
+          <span style="font-size:11px;color:#94a3b8;margin-top:2px;display:block;">📍 اضغط لتحديد موقعك الحالي  |  🗺️ بحث في الخريطة</span>
         </div>
         <div class="form-group">
           <label>رقم هاتف المستلم</label>
@@ -472,9 +476,53 @@ function openMapInput(inputId,govId,wilId){
   const gov=document.getElementById(govId).value
   const wil=document.getElementById(wilId).value
   let q=loc
-  if(q&&gov)q+=', '+wil+'، '+gov
-  if(q)window.open('https://www.google.com/maps/search/'+encodeURIComponent(q+'، سلطنة عمان'),'_blank')
-  else showAlert('اكتب العنوان أولاً ثم اضغط على 📍','error')
+  if(q&&gov)q+=', '+wil+'، '+gov+'، سلطنة عمان'
+  else if(gov)q=wil+'، '+gov+'، سلطنة عمان'
+  else q='سلطنة عمان'
+  window.open('https://www.google.com/maps/search/'+encodeURIComponent(q),'_blank')
+}
+
+function getGPSLocation(inputId,govId,wilId){
+  if(!navigator.geolocation){showAlert('الموقع غير متاح على هذا الجهاز','error');return}
+  showAlert('جاري تحديد الموقع...','success')
+  navigator.geolocation.getCurrentPosition(async function(pos){
+    const lat=pos.coords.latitude,lng=pos.coords.longitude
+    const input=document.getElementById(inputId)
+    input.value=lat+', '+lng
+    try{
+      const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ar`)
+      const d=await r.json()
+      if(d&&d.display_name){
+        input.value=d.display_name
+        const parts=d.address||{}
+        if(parts.state){
+          const govSelect=document.getElementById(govId)
+          for(let i=0;i<govSelect.options.length;i++){
+            if(govSelect.options[i].textContent.includes(parts.state)||parts.state.includes(govSelect.options[i].textContent)){
+              govSelect.value=govSelect.options[i].value;break
+            }
+          }
+          govSelect.dispatchEvent(new Event('change'))
+        }
+        if(parts.city||parts.town||parts.village||parts.county){
+          const wil=parts.city||parts.town||parts.village||parts.county
+          const wilSelect=document.getElementById(wilId)
+          setTimeout(()=>{
+            for(let i=0;i<wilSelect.options.length;i++){
+              if(wilSelect.options[i].textContent.includes(wil)||wil.includes(wilSelect.options[i].textContent)){
+                wilSelect.value=wilSelect.options[i].value;break
+              }
+            }
+          },100)
+        }
+      }
+    }catch(e){/* Nominatim result optional */}
+    showAlert('✅ تم تحديد الموقع','success')
+  },function(err){
+    if(err.code===1)showAlert('الرجاء السماح بتحديد الموقع في المتصفح','error')
+    else if(err.code===2)showAlert('تعذر الحصول على الموقع (GPS ضعيف)','error')
+    else showAlert('تعذر الحصول على الموقع','error')
+  },{enableHighAccuracy:true,timeout:10000})
 }
 
 function showAlert(msg,type){
