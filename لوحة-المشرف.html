@@ -175,15 +175,22 @@ function switchTab(tab){
 }
 
 async function generateCourier(){
-  const username=document.getElementById('genUsername').value
-  const password=document.getElementById('genPassword').value
   const btn=document.querySelector('#tab-generate .btn');btn.disabled=true;btn.textContent='⏳ جاري...'
+  const username=genRandomUsername()
+  const password=genRandomPassword()
+  document.getElementById('genUsername').value=username
+  document.getElementById('genPassword').value=password
   const{data,error}=await sbFetch('couriers',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify({username,password,name:'',phone:'',governorate:'',vehicle_type:'',has_profile:false,is_active:true})})
-  if(error){showAlert('genAlert','❌ فشل التوليد: '+error.message,'bad');console.error('Generate error:',error);btn.disabled=false;btn.textContent='🔄 توليد مندوب جديد';return}
+  if(error){
+    if(error.message.includes('409')||error.message.includes('23505')){
+      showAlert('genAlert','🤖 اسم المستخدم مكرر، جرب مرة أخرى','info')
+      btn.disabled=false;btn.textContent='🔄 توليد مندوب جديد'
+      return generateCourier()
+    }
+    showAlert('genAlert','❌ فشل التوليد: '+error.message,'bad');btn.disabled=false;btn.textContent='🔄 توليد مندوب جديد';return
+  }
   document.getElementById('genResult').classList.remove('hidden')
   document.getElementById('genResult').innerHTML='✅ <strong>تم التوليد بنجاح!</strong><br><br>👤 اسم المستخدم: <span class="cred">'+username+'</span><br>🔑 كلمة المرور: <span class="cred">'+password+'</span><br><br><span style="font-size:12px;color:var(--text-muted);">سلم هذه البيانات للمندوب لتسجيل الدخول</span>'
-  document.getElementById('genUsername').value=genRandomUsername()
-  document.getElementById('genPassword').value=genRandomPassword()
   btn.disabled=false;btn.textContent='🔄 توليد مندوب جديد'
   loadCouriers()
   loadGeneratedCouriers()
