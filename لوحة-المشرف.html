@@ -266,9 +266,17 @@ async function loadOrders(){
 }
 
 async function loadSenders(){
+  document.getElementById('sendersList').innerHTML='<p style="color:var(--text-muted)">جاري التحميل...</p>'
   try{
-    const r=await fetch(SUPABASE_URL+'/rest/v1/senders?select=*&order=last_seen.desc',{headers:SB_HEADERS})
-    if(!r.ok){const t=await r.text();document.getElementById('sendersList').innerHTML='<p style="color:#991b1b">خطأ: '+r.status+' '+t+'</p>';return}
+    // اختبار أولاً: هل الجدول موجود؟
+    const testR=await fetch(SUPABASE_URL+'/rest/v1/senders?select=id&limit=1',{headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}})
+    if(!testR.ok){
+      const testT=await testR.text()
+      document.getElementById('sendersList').innerHTML='<p style="color:#991b1b">جدول المرسلين غير موجود أو لا يمكن الوصول إليه.<br>رمز الخطأ: '+testR.status+'<br>الرد: '+testT+'</p>'
+      return
+    }
+    const r=await fetch(SUPABASE_URL+'/rest/v1/senders?select=*&order=last_seen.desc',{headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Accept':'application/json'}})
+    if(!r.ok){const t=await r.text();document.getElementById('sendersList').innerHTML='<p style="color:#991b1b">خطأ '+r.status+': '+t+'</p>';return}
     const data=await r.json()
   const el=document.getElementById('sendersList')
   document.getElementById('senderCount').textContent='('+(data?data.length:0)+')'
