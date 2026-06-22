@@ -998,20 +998,22 @@ function orderCardHTML(o){
 function esc(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
 // Auto login check
-const savedName=localStorage.getItem('sender_name')
-const savedPhone=localStorage.getItem('sender_phone')
-const savedLogged=localStorage.getItem('sender_logged')
-if(savedLogged==='true'&&savedName&&savedPhone){
-  document.getElementById('senderName').value=savedName
-  document.getElementById('senderPhoneLogin').value=savedPhone
-  document.getElementById('f-sender-phone').value=savedPhone
-  document.getElementById('loginSection').classList.add('hidden')
-  document.getElementById('landingSection').classList.remove('hidden')
-  await sbFetch('senders',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify({name:savedName,phone:savedPhone,last_seen:new Date().toISOString()})}).catch(()=>{})
-}else{
-  document.getElementById('loginSection').classList.remove('hidden')
-}
-fetchOrders()
+;(async function(){
+  const savedName=localStorage.getItem('sender_name')
+  const savedPhone=localStorage.getItem('sender_phone')
+  const savedLogged=localStorage.getItem('sender_logged')
+  if(savedLogged==='true'&&savedName&&savedPhone){
+    document.getElementById('senderName').value=savedName
+    document.getElementById('senderPhoneLogin').value=savedPhone
+    document.getElementById('f-sender-phone').value=savedPhone
+    document.getElementById('loginSection').classList.add('hidden')
+    document.getElementById('landingSection').classList.remove('hidden')
+    await sbFetch('senders',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify({name:savedName,phone:savedPhone,last_seen:new Date().toISOString()})}).catch(()=>{})
+  }else{
+    document.getElementById('loginSection').classList.remove('hidden')
+  }
+  fetchOrders()
+})()
 </script>
 </body>
 </html>
