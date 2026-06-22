@@ -277,6 +277,12 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 <div class="container">
   <div id="alert"></div>
 
+  <!-- Logged-in bar -->
+  <div id="userBar" class="hidden" style="display:none;align-items:center;justify-content:space-between;background:var(--card-bg);backdrop-filter:blur(12px);border-radius:var(--radius-sm);padding:10px 16px;margin-bottom:16px;border:1px solid var(--border);animation:fadeInUp 0.3s ease-out;">
+    <span id="userBarName" style="font-weight:600;font-size:14px;color:var(--text);">👤 </span>
+    <button onclick="senderLogout()" style="padding:6px 14px;border:none;border-radius:8px;background:#fef2f2;color:#991b1b;font-size:13px;font-weight:600;cursor:pointer;">🚪 خروج</button>
+  </div>
+
   <!-- Login Section -->
   <div id="loginSection">
     <div class="page-header">
@@ -575,6 +581,28 @@ async function sbInsertOrder(order){
 }
 
 /* ===== Sender Auth ===== */
+function showUserBar(name){
+  const bar=document.getElementById('userBar')
+  bar.style.display='flex'
+  bar.classList.remove('hidden')
+  document.getElementById('userBarName').textContent='👤 '+name
+}
+function hideUserBar(){
+  const bar=document.getElementById('userBar')
+  bar.style.display='none'
+  bar.classList.add('hidden')
+}
+function senderLogout(){
+  localStorage.removeItem('sender_name')
+  localStorage.removeItem('sender_phone')
+  localStorage.removeItem('sender_logged')
+  hideUserBar()
+  document.getElementById('wizardSection').classList.add('hidden')
+  document.getElementById('trackingSection').classList.add('hidden')
+  document.getElementById('landingSection').classList.add('hidden')
+  document.getElementById('loginSection').classList.remove('hidden')
+}
+
 async function senderLogin(){
   const name=document.getElementById('senderName').value.trim()
   const phone=document.getElementById('senderPhoneLogin').value.trim()
@@ -583,6 +611,7 @@ async function senderLogin(){
   localStorage.setItem('sender_phone',phone)
   localStorage.setItem('sender_logged','true')
   document.getElementById('f-sender-phone').value=phone
+  showUserBar(name)
   document.getElementById('loginSection').classList.add('hidden')
   document.getElementById('landingSection').classList.remove('hidden')
   try{await sbFetch('senders',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify({name,phone,last_seen:new Date().toISOString()})})}catch(e){}
@@ -1007,6 +1036,7 @@ async function initPage(){
     document.getElementById('senderName').value=savedName
     document.getElementById('senderPhoneLogin').value=savedPhone
     document.getElementById('f-sender-phone').value=savedPhone
+    showUserBar(savedName)
     document.getElementById('loginSection').classList.add('hidden')
     document.getElementById('landingSection').classList.remove('hidden')
     try{await sbFetch('senders',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify({name:savedName,phone:savedPhone,last_seen:new Date().toISOString()})})}catch(e){}
