@@ -426,6 +426,20 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
     <!-- Step 3: Recipient Details -->
     <div class="glass form-section wizard-step hidden" id="step3">
       <h3>👤 بيانات المستلم</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>المحافظة</label>
+          <select id="f-recipient-governorate" onchange="updateRecipientWilayats()">
+            <option value="">-- اختر المحافظة --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>الولاية</label>
+          <select id="f-recipient-wilayat">
+            <option value="">-- اختر الولاية --</option>
+          </select>
+        </div>
+      </div>
       <div class="form-group">
         <label>عنوان التوصيل <span style="color:#94a3b8;font-size:11px;">(اختياري)</span></label>
         <div style="display:flex;gap:6px;">
@@ -562,12 +576,18 @@ async function fetchOrders(){
 // Governorates
 const govSelect=document.getElementById('f-governorate')
 Object.keys(OMAN_DATA).forEach(g=>{const o=document.createElement('option');o.value=g;o.textContent=g;govSelect.appendChild(o)})
+const recGovSelect=document.getElementById('f-recipient-governorate')
+Object.keys(OMAN_DATA).forEach(g=>{const o=document.createElement('option');o.value=g;o.textContent=g;recGovSelect.appendChild(o)})
 
 function updateWilayats(){
-  const g=document.getElementById('f-governorate').value
-  const w=document.getElementById('f-wilayat')
-  w.innerHTML='<option value="">-- اختر الولاية --</option>'
-  if(g&&OMAN_DATA[g]){OMAN_DATA[g].forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;w.appendChild(o)})}
+  const gov=document.getElementById('f-governorate').value
+  const wil=document.getElementById('f-wilayat');wil.innerHTML='<option value="">-- اختر الولاية --</option>'
+  if(gov&&OMAN_DATA[gov])OMAN_DATA[gov].forEach(w=>{const o=document.createElement('option');o.value=w;o.textContent=w;wil.appendChild(o)})
+}
+function updateRecipientWilayats(){
+  const gov=document.getElementById('f-recipient-governorate').value
+  const wil=document.getElementById('f-recipient-wilayat');wil.innerHTML='<option value="">-- اختر الولاية --</option>'
+  if(gov&&OMAN_DATA[gov])OMAN_DATA[gov].forEach(w=>{const o=document.createElement('option');o.value=w;o.textContent=w;wil.appendChild(o)})
 }
 
 // Photo upload (keep original file for storage upload)
@@ -796,6 +816,8 @@ async function submitOrder(){
   const wilayat=document.getElementById('f-wilayat').value
   const pickup=document.getElementById('f-pickup').value.trim()
   const dropoff=document.getElementById('f-dropoff').value.trim()
+  const recGov=document.getElementById('f-recipient-governorate').value
+  const recWil=document.getElementById('f-recipient-wilayat').value
   const senderPhone=document.getElementById('f-sender-phone').value.trim()
   const recipientPhone=document.getElementById('f-recipient-phone').value.trim()
   const notes=document.getElementById('f-notes').value.trim()
@@ -822,7 +844,8 @@ async function submitOrder(){
         id:Date.now().toString(36)+Math.random().toString(36).slice(2,8),
         tracking:genTracking(),created_at:new Date().toISOString(),
         title,description:desc,amount:parseFloat(amount),
-        governorate,wilayat,weight,type,fragile,time_pref:timePref,
+        governorate,wilayat,recipient_governorate:recGov,recipient_wilayat:recWil,
+        weight,type,fragile,time_pref:timePref,
         pickup_location:pickup,dropoff_location:dropoff,
         sender_phone:senderPhone,recipient_phone:recipientPhone,
         order_photo_url:r.result,sender_photo_url:'',recipient_photo_url:'',
@@ -830,7 +853,7 @@ async function submitOrder(){
       }
       orders.unshift(order);saveLocalOrders()
       resetForm();btn.disabled=false;btn.textContent='إرسال طلب التوصيل'
-      showAlert('تم الإرسال محلياً! الرقم: '+order.tracking,'success');renderMyOrders()
+      showAlert('تم الإرسال محلياً! الرقم: '+order.tracking,'success');backToLanding()
     }
     r.readAsDataURL(orderPhotoFile)
     return
@@ -842,7 +865,8 @@ async function submitOrder(){
 
   const order={
     title,description:desc,amount:parseFloat(amount),
-    governorate,wilayat,weight,type,fragile,time_pref:timePref,
+    governorate,wilayat,recipient_governorate:recGov,recipient_wilayat:recWil,
+    weight,type,fragile,time_pref:timePref,
     pickup_location:pickup,dropoff_location:dropoff,
     sender_phone:senderPhone,recipient_phone:recipientPhone,
     order_photo_url:orderPhotoUrl,sender_photo_url:senderPhotoUrl,recipient_photo_url:recipientPhotoUrl,
@@ -855,7 +879,7 @@ async function submitOrder(){
   resetForm()
   btn.disabled=false;btn.textContent='إرسال طلب التوصيل'
   showAlert('تم الإرسال بنجاح! رقم التتبع: '+(data?.[0]?.tracking||genTracking()),'success')
-  fetchOrders()
+  backToLanding()
 }
 
 function resetForm(){

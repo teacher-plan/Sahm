@@ -592,8 +592,10 @@ function cardHTML(o){
   let locLink=o.governorate
     ?'<div class="detail-row"><span class="detail-label">📍 الاستلام:</span><button class="map-link" onclick="openMap(\''+escAttr(o.pickup_location)+'\',\''+escAttr(o.wilayat)+'\',\''+escAttr(o.governorate)+'\')">'+esc(o.pickup_location)+'</button></div>'
     :'<div class="detail-row"><span class="detail-label">📍 الاستلام:</span><span>'+esc(o.pickup_location)+'</span></div>'
-  let locLink2=o.governorate
-    ?'<div class="detail-row"><span class="detail-label">📍 التوصيل:</span><button class="map-link" onclick="openMap(\''+escAttr(o.dropoff_location)+'\',\''+escAttr(o.wilayat)+'\',\''+escAttr(o.governorate)+'\')">'+esc(o.dropoff_location)+'</button></div>'
+  let recLoc=''
+  if(o.recipient_governorate)recLoc=' <span style="font-size:11px;color:var(--text-muted)">('+esc(o.recipient_governorate)+(o.recipient_wilayat?' - '+esc(o.recipient_wilayat):'')+')</span>'
+  let locLink2=o.recipient_governorate||o.governorate
+    ?'<div class="detail-row"><span class="detail-label">📍 التوصيل:</span><button class="map-link" onclick="openMap(\''+escAttr(o.dropoff_location)+'\',\''+escAttr(o.recipient_wilayat||o.wilayat)+'\',\''+escAttr(o.recipient_governorate||o.governorate)+'\')">'+esc(o.dropoff_location)+'</button>'+recLoc+'</div>'
     :'<div class="detail-row"><span class="detail-label">📍 التوصيل:</span><span>'+esc(o.dropoff_location)+'</span></div>'
 
   let photosHTML=''
