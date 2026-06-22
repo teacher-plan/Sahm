@@ -48,6 +48,35 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 @media(max-width:768px){ .layout { grid-template-columns:1fr; } }
 
 .glass { background:var(--card-bg); backdrop-filter:blur(16px) saturate(1.2); -webkit-backdrop-filter:blur(16px) saturate(1.2); border-radius:var(--radius); border:1px solid rgba(255,255,255,0.6); box-shadow:var(--shadow); padding:28px; transition:var(--transition); }
+
+/* Landing Cards */
+.landing-cards { display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:600px; margin:0 auto; animation:fadeInUp 0.5s ease-out; }
+.landing-card { background:var(--card-bg); backdrop-filter:blur(16px); border-radius:var(--radius); border:2px solid var(--border); padding:32px 20px; text-align:center; cursor:pointer; transition:var(--transition); }
+.landing-card:hover { border-color:var(--primary); box-shadow:var(--shadow-lg); transform:translateY(-4px); }
+.landing-icon { font-size:48px; margin-bottom:12px; }
+.landing-title { font-size:20px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.landing-desc { font-size:14px; color:var(--text-muted); }
+.btn-back { background:none; border:none; color:var(--text-muted); font-size:14px; cursor:pointer; padding:4px 0; margin-bottom:12px; display:block; }
+.btn-back:hover { color:var(--primary); }
+
+/* Stepper */
+.stepper { display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:20px; animation:fadeInUp 0.4s ease-out; }
+.step { display:flex; align-items:center; gap:6px; }
+.step-num { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; background:var(--border); color:var(--text-muted); transition:var(--transition); }
+.step.active .step-num { background:var(--primary); color:white; box-shadow:0 0 0 4px var(--primary-glow); }
+.step.done .step-num { background:var(--primary-light); color:var(--primary); }
+.step-label { font-size:13px; font-weight:600; color:var(--text-muted); }
+.step.active .step-label { color:var(--primary); }
+.step-line { width:40px; height:2px; background:var(--border); margin:0 8px; }
+.step.done ~ .step-line { background:var(--primary); }
+
+/* Wizard Steps */
+.wizard-step { animation:fadeInUp 0.4s ease-out; }
+.btn-next { width:100%; padding:12px; border:none; border-radius:var(--radius-sm); background:linear-gradient(135deg,#0f766e,#0d9488); color:white; font-size:15px; font-weight:600; cursor:pointer; transition:var(--transition); margin-top:16px; }
+.btn-next:hover { opacity:0.9; transform:translateY(-2px); }
+.btn-back-step { padding:12px 20px; border:1.5px solid var(--border); border-radius:var(--radius-sm); background:white; color:var(--text-muted); font-size:14px; font-weight:600; cursor:pointer; transition:var(--transition); }
+.btn-back-step:hover { border-color:var(--primary); color:var(--primary); }
+@media(max-width:480px){ .landing-cards{grid-template-columns:1fr} .stepper{gap:4px} .step-line{width:24px} }
 .glass:hover { box-shadow:var(--shadow-lg); }
 .form-section, .orders-section { animation:fadeInUp 0.7s ease-out; }
 .orders-section { animation-delay:0.15s; }
@@ -245,161 +274,199 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 </div>
 
 <div class="container">
-  <div class="page-header">
-    <h2>إرسال طرد</h2>
-    <p>املأ النموذج لإضافة طلب توصيل جديد</p>
+  <div id="alert"></div>
+
+  <!-- Landing: Choose Action -->
+  <div id="landingSection">
+    <div class="page-header">
+      <h2>مرحباً بك في سهم</h2>
+      <p>ماذا تريد أن تفعل؟</p>
+    </div>
+    <div class="landing-cards">
+      <div class="landing-card" onclick="startNewOrder()">
+        <div class="landing-icon">📦</div>
+        <div class="landing-title">إرسال طلب</div>
+        <div class="landing-desc">إنشاء طلب توصيل جديد لمندوب</div>
+      </div>
+      <div class="landing-card" onclick="showTracking()">
+        <div class="landing-icon">🔍</div>
+        <div class="landing-title">تتبع الطلبات</div>
+        <div class="landing-desc">متابعة حالة طلباتك المرسلة</div>
+      </div>
+    </div>
   </div>
 
-  <div class="layout">
-    <div class="glass form-section">
-      <h3>طلب توصيل جديد</h3>
-      <div id="alert"></div>
+  <!-- Wizard: New Order -->
+  <div id="wizardSection" class="hidden">
+    <div class="page-header" style="padding-bottom:16px;">
+      <h2>إرسال طلب</h2>
+      <p>خطوات بسيطة لإنشاء طلب توصيل</p>
+    </div>
+    <button class="btn-back" onclick="backToLanding()">→ الرجوع</button>
 
-      <!-- ====== قسم بيانات الطرد ====== -->
-      <div class="form-section-card">
-        <div class="section-card-header">📦 بيانات الطرد</div>
-        <div class="form-group">
-          <label>عنوان الطرد</label>
-          <input type="text" id="f-title" placeholder="مثال: توصيل هاتف جوال">
-        </div>
-        <div class="form-group">
-          <label>وصف الطرد</label>
-          <textarea id="f-desc" rows="2" placeholder="وصف مختصر للطرد..."></textarea>
-        </div>
-        <div class="form-row-3">
-          <div class="form-group">
-            <label>الوزن</label>
-            <select id="f-weight">
-              <option value="أقل من 1 كجم">أقل من 1 كجم</option>
-              <option value="1-5 كجم" selected>1-5 كجم</option>
-              <option value="5-20 كجم">5-20 كجم</option>
-              <option value="أكثر من 20 كجم">أكثر من 20 كجم</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>النوع</label>
-            <select id="f-type">
-              <option value="مستندات">مستندات</option>
-              <option value="إلكترونيات">إلكترونيات</option>
-              <option value="ملابس">ملابس</option>
-              <option value="مواد غذائية">مواد غذائية</option>
-              <option value="زجاجيات">زجاجيات</option>
-              <option value="أخرى" selected>أخرى</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>المبلغ</label>
-            <input type="number" id="f-amount" placeholder="0" min="0">
-          </div>
-        </div>
-        <div class="toggle-wrap">
-          <div class="toggle"><input type="checkbox" id="f-fragile"><span class="slider"></span></div>
-          <label for="f-fragile">🫙 قابل للكسر (زجاج / إلكترونيات)</label>
-        </div>
-        <div class="form-group">
-          <label>وقت التوصيل</label>
-          <select id="f-time">
-            <option value="فوري">🔴 فوري (أسرع وقت)</option>
-            <option value="خلال 3 ساعات" selected>🟡 خلال 3 ساعات</option>
-            <option value="اليوم">🟢 اليوم</option>
-            <option value="غداً">🔵 غداً</option>
-          </select>
-        </div>
-        <div class="photo-upload">
-          <label style="color:var(--primary);font-weight:700;">📸 صورة الطرد *</label>
-          <div class="upload-area" onclick="document.getElementById('order-photo-input').click()" style="border-color:var(--primary);border-style:solid;">
-            <span class="upload-icon">📦</span>
-            <span class="upload-text" style="font-weight:600;">اختر صورة للطرد</span>
-            <span class="upload-hint">صورة واضحة للشحنة المراد توصيلها</span>
-            <input type="file" id="order-photo-input" accept="image/*" onchange="handlePhotoUpload(this,'order')">
-          </div>
-          <div class="photo-preview" id="order-photo-preview"></div>
-        </div>
-      </div>
-
-      <!-- ====== قسم بيانات المرسل ====== -->
-      <div class="form-section-card">
-        <div class="section-card-header sender-header">🧑 بيانات المرسل</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>المحافظة</label>
-            <select id="f-governorate" onchange="updateWilayats()">
-              <option value="">-- اختر المحافظة --</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>الولاية</label>
-            <select id="f-wilayat">
-              <option value="">-- اختر الولاية --</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>عنوان الاستلام <span style="color:#ef4444;font-size:11px;">* مطلوب</span></label>
-          <div style="display:flex;gap:6px;">
-            <input type="text" id="f-pickup" placeholder="الحي، الشارع، معلم قريب" style="flex:1;">
-            <button type="button" onclick="getGPSLocation('f-pickup','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#dbeafe;font-size:16px;cursor:pointer;" title="📍 موقعي الحالي"></button>
-            <button type="button" onclick="openMapInput('f-pickup','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:16px;cursor:pointer;" title="فتح في قوقل ماب">🗺️</button>
-          </div>
-          <span style="font-size:11px;color:#94a3b8;margin-top:2px;display:block;">📍 اضغط لتحديد موقعك الحالي  |  🗺️ بحث في الخريطة</span>
-        </div>
-        <div class="form-group">
-          <label>رقم هاتف المرسل</label>
-          <input type="tel" id="f-sender-phone" placeholder="9XXXXXXXX">
-        </div>
-        <div class="photo-upload">
-          <label>🏠 صورة بيت المرسل</label>
-          <div class="upload-area" onclick="document.getElementById('sender-photo-input').click()">
-            <span class="upload-icon">🏠</span>
-            <span class="upload-text">اختر صورة</span>
-            <span class="upload-hint">لتسهيل تحديد المنزل على المندوب</span>
-            <input type="file" id="sender-photo-input" accept="image/*" onchange="handlePhotoUpload(this,'sender')">
-          </div>
-          <div class="photo-preview" id="sender-photo-preview"></div>
-        </div>
-      </div>
-
-      <!-- ====== قسم بيانات المستلم ====== -->
-      <div class="form-section-card">
-        <div class="section-card-header recipient-header">👤 بيانات المستلم</div>
-        <div class="form-group">
-          <label>عنوان التوصيل <span style="color:#94a3b8;font-size:11px;">(اختياري)</span></label>
-          <div style="display:flex;gap:6px;">
-            <input type="text" id="f-dropoff" placeholder="الحي، الشارع، معلم قريب" style="flex:1;">
-            <button type="button" onclick="getGPSLocation('f-dropoff','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#dbeafe;font-size:16px;cursor:pointer;" title="📍 موقعي الحالي">📍</button>
-            <button type="button" onclick="openMapInput('f-dropoff','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:16px;cursor:pointer;" title="فتح في قوقل ماب">🗺️</button>
-          </div>
-          <span style="font-size:11px;color:#94a3b8;margin-top:2px;display:block;">📍 اضغط لتحديد موقعك الحالي  |  🗺️ بحث في الخريطة</span>
-        </div>
-        <div class="form-group">
-          <label>رقم هاتف المستلم</label>
-          <input type="tel" id="f-recipient-phone" placeholder="9XXXXXXXX">
-        </div>
-        <div class="photo-upload">
-          <label>🏠 صورة بيت المستلم</label>
-          <div class="upload-area" onclick="document.getElementById('recipient-photo-input').click()">
-            <span class="upload-icon">🏠</span>
-            <span class="upload-text">اختر صورة</span>
-            <span class="upload-hint">لتسهيل تحديد المنزل على المندوب</span>
-            <input type="file" id="recipient-photo-input" accept="image/*" onchange="handlePhotoUpload(this,'recipient')">
-          </div>
-          <div class="photo-preview" id="recipient-photo-preview"></div>
-        </div>
-      </div>
-
-      <!-- ====== إضافات ====== -->
-      <div class="form-section-card">
-        <div class="section-card-header notes-header">📝 ملاحظات إضافية</div>
-        <div class="form-group">
-          <textarea id="f-notes" rows="2" placeholder="أي معلومات إضافية للمندوب..."></textarea>
-        </div>
-      </div>
-
-      <button class="btn-submit" onclick="submitOrder()">إرسال طلب التوصيل</button>
+    <!-- Stepper -->
+    <div class="stepper">
+      <div class="step active" data-step="1"><span class="step-num">1</span><span class="step-label">الطرد</span></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="2"><span class="step-num">2</span><span class="step-label">المرسل</span></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="3"><span class="step-num">3</span><span class="step-label">المستلم</span></div>
     </div>
 
-    <div class="glass orders-section">
-      <h3>طلباتي المرسلة</h3>
+    <!-- Step 1: Package Details -->
+    <div class="glass form-section wizard-step" id="step1">
+      <h3>📦 بيانات الطرد</h3>
+      <div class="form-group">
+        <label>عنوان الطرد</label>
+        <input type="text" id="f-title" placeholder="مثال: توصيل هاتف جوال">
+      </div>
+      <div class="form-group">
+        <label>وصف الطرد</label>
+        <textarea id="f-desc" rows="2" placeholder="وصف مختصر للطرد..."></textarea>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>الوزن</label>
+          <select id="f-weight">
+            <option value="أقل من 1 كجم">أقل من 1 كجم</option>
+            <option value="1-5 كجم" selected>1-5 كجم</option>
+            <option value="5-20 كجم">5-20 كجم</option>
+            <option value="أكثر من 20 كجم">أكثر من 20 كجم</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>النوع</label>
+          <select id="f-type">
+            <option value="مستندات">مستندات</option>
+            <option value="إلكترونيات">إلكترونيات</option>
+            <option value="ملابس">ملابس</option>
+            <option value="مواد غذائية">مواد غذائية</option>
+            <option value="زجاجيات">زجاجيات</option>
+            <option value="أخرى" selected>أخرى</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>المبلغ</label>
+          <input type="number" id="f-amount" placeholder="0" min="0">
+        </div>
+      </div>
+      <div class="toggle-wrap">
+        <div class="toggle"><input type="checkbox" id="f-fragile"><span class="slider"></span></div>
+        <label for="f-fragile">🫙 قابل للكسر (زجاج / إلكترونيات)</label>
+      </div>
+      <div class="form-group">
+        <label>وقت التوصيل</label>
+        <select id="f-time">
+          <option value="فوري">🔴 فوري (أسرع وقت)</option>
+          <option value="خلال 3 ساعات" selected>🟡 خلال 3 ساعات</option>
+          <option value="اليوم">🟢 اليوم</option>
+          <option value="غداً">🔵 غداً</option>
+        </select>
+      </div>
+      <div class="photo-upload">
+        <label style="color:var(--primary);font-weight:700;">📸 صورة الطرد *</label>
+        <div class="upload-area" onclick="document.getElementById('order-photo-input').click()">
+          <span class="upload-icon">📦</span>
+          <span class="upload-text">اختر صورة للطرد</span>
+          <span class="upload-hint">صورة واضحة للشحنة المراد توصيلها</span>
+          <input type="file" id="order-photo-input" accept="image/*" onchange="handlePhotoUpload(this,'order')">
+        </div>
+        <div class="photo-preview" id="order-photo-preview"></div>
+      </div>
+      <button class="btn-next" onclick="goToStep(2)">متابعة ➞</button>
+    </div>
+
+    <!-- Step 2: Sender Details -->
+    <div class="glass form-section wizard-step hidden" id="step2">
+      <h3>🧑 بيانات المرسل</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>المحافظة</label>
+          <select id="f-governorate" onchange="updateWilayats()">
+            <option value="">-- اختر المحافظة --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>الولاية</label>
+          <select id="f-wilayat">
+            <option value="">-- اختر الولاية --</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>عنوان الاستلام <span style="color:#ef4444;font-size:11px;">* مطلوب</span></label>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="f-pickup" placeholder="الحي، الشارع، معلم قريب" style="flex:1;">
+          <button type="button" onclick="getGPSLocation('f-pickup','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#dbeafe;font-size:16px;cursor:pointer;" title="📍 موقعي الحالي">📍</button>
+          <button type="button" onclick="openMapInput('f-pickup','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:16px;cursor:pointer;" title="فتح في قوقل ماب">🗺️</button>
+        </div>
+        <span style="font-size:11px;color:#94a3b8;margin-top:2px;display:block;">📍 اضغط لتحديد موقعك الحالي  |  🗺️ بحث في الخريطة</span>
+      </div>
+      <div class="form-group">
+        <label>رقم هاتف المرسل</label>
+        <input type="tel" id="f-sender-phone" placeholder="9XXXXXXXX">
+      </div>
+      <div class="photo-upload">
+        <label>🏠 صورة بيت المرسل</label>
+        <div class="upload-area" onclick="document.getElementById('sender-photo-input').click()">
+          <span class="upload-icon">🏠</span>
+          <span class="upload-text">اختر صورة</span>
+          <span class="upload-hint">لتسهيل تحديد المنزل على المندوب</span>
+          <input type="file" id="sender-photo-input" accept="image/*" onchange="handlePhotoUpload(this,'sender')">
+        </div>
+        <div class="photo-preview" id="sender-photo-preview"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button class="btn-back-step" onclick="goToStep(1)">➞ السابق</button>
+        <button class="btn-next" onclick="goToStep(3)" style="flex:1;">متابعة ➞</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Recipient Details -->
+    <div class="glass form-section wizard-step hidden" id="step3">
+      <h3>👤 بيانات المستلم</h3>
+      <div class="form-group">
+        <label>عنوان التوصيل <span style="color:#94a3b8;font-size:11px;">(اختياري)</span></label>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="f-dropoff" placeholder="الحي، الشارع، معلم قريب" style="flex:1;">
+          <button type="button" onclick="getGPSLocation('f-dropoff','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#dbeafe;font-size:16px;cursor:pointer;" title="📍 موقعي الحالي">📍</button>
+          <button type="button" onclick="openMapInput('f-dropoff','f-governorate','f-wilayat')" style="flex-shrink:0;width:44px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:16px;cursor:pointer;" title="فتح في قوقل ماب">🗺️</button>
+        </div>
+        <span style="font-size:11px;color:#94a3b8;margin-top:2px;display:block;">📍 اضغط لتحديد موقعك الحالي  |  🗺️ بحث في الخريطة</span>
+      </div>
+      <div class="form-group">
+        <label>رقم هاتف المستلم</label>
+        <input type="tel" id="f-recipient-phone" placeholder="9XXXXXXXX">
+      </div>
+      <div class="photo-upload">
+        <label>🏠 صورة بيت المستلم</label>
+        <div class="upload-area" onclick="document.getElementById('recipient-photo-input').click()">
+          <span class="upload-icon">🏠</span>
+          <span class="upload-text">اختر صورة</span>
+          <span class="upload-hint">لتسهيل تحديد المنزل على المندوب</span>
+          <input type="file" id="recipient-photo-input" accept="image/*" onchange="handlePhotoUpload(this,'recipient')">
+        </div>
+        <div class="photo-preview" id="recipient-photo-preview"></div>
+      </div>
+      <div class="form-group">
+        <label>📝 ملاحظات إضافية</label>
+        <textarea id="f-notes" rows="2" placeholder="أي معلومات إضافية للمندوب..."></textarea>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button class="btn-back-step" onclick="goToStep(2)">➞ السابق</button>
+        <button class="btn-submit" onclick="submitOrder()" style="flex:1;">📩 إرسال الطلب</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tracking Section -->
+  <div id="trackingSection" class="hidden">
+    <div class="page-header" style="padding-bottom:16px;">
+      <h2>تتبع الطلبات</h2>
+      <p>متابعة حالة طلباتك المرسلة</p>
+    </div>
+    <button class="btn-back" onclick="backToLanding()">→ الرجوع</button>
+    <div class="glass">
       <div id="my-orders"><div class="empty-state">لا توجد طلبيات بعد</div></div>
     </div>
   </div>
@@ -674,6 +741,40 @@ async function searchMapLocation(){
     showAlert('خطأ في البحث','error')
   }
   btn.textContent='🔍 بحث';btn.disabled=false
+}
+
+/* ===== Wizard Navigation ===== */
+let currentStep=1
+function startNewOrder(){
+  document.getElementById('landingSection').classList.add('hidden')
+  document.getElementById('trackingSection').classList.add('hidden')
+  document.getElementById('wizardSection').classList.remove('hidden')
+  currentStep=1;updateStep()
+}
+function showTracking(){
+  document.getElementById('landingSection').classList.add('hidden')
+  document.getElementById('wizardSection').classList.add('hidden')
+  document.getElementById('trackingSection').classList.remove('hidden')
+  loadMyOrders()
+}
+function backToLanding(){
+  document.getElementById('wizardSection').classList.add('hidden')
+  document.getElementById('trackingSection').classList.add('hidden')
+  document.getElementById('landingSection').classList.remove('hidden')
+}
+function goToStep(n){
+  if(n<1||n>3)return
+  currentStep=n;updateStep()
+}
+function updateStep(){
+  document.querySelectorAll('.wizard-step').forEach(s=>s.classList.add('hidden'))
+  document.getElementById('step'+currentStep).classList.remove('hidden')
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active','done'))
+  for(let i=1;i<=3;i++){
+    const el=document.querySelector('.step[data-step="'+i+'"]')
+    if(i<currentStep)el.classList.add('done')
+    else if(i===currentStep)el.classList.add('active')
+  }
 }
 
 function showAlert(msg,type){
