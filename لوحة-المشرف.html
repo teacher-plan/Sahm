@@ -266,7 +266,8 @@ async function loadOrders(){
 }
 
 async function loadSenders(){
-  const{data}=await sbFetch('senders?select=*&order=last_seen.desc')
+  const{data,error}=await sbFetch('senders?select=*&order=last_seen.desc')
+  if(error){console.error('loadSenders error:',error);document.getElementById('sendersList').innerHTML='<p style="color:#991b1b">خطأ في تحميل البيانات</p>';return}
   const el=document.getElementById('sendersList')
   document.getElementById('senderCount').textContent='('+(data?data.length:0)+')'
   if(!data||data.length===0){el.innerHTML='<p style="color:var(--text-muted)">لا يوجد مرسلين</p>';return}
