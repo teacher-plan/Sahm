@@ -266,13 +266,16 @@ async function loadOrders(){
 }
 
 async function loadSenders(){
-  const{data,error}=await sbFetch('senders?select=*&order=last_seen.desc')
-  if(error){console.error('loadSenders error:',error);document.getElementById('sendersList').innerHTML='<p style="color:#991b1b">خطأ في تحميل البيانات</p>';return}
+  try{
+    const r=await fetch(SUPABASE_URL+'/rest/v1/senders?select=*&order=last_seen.desc',{headers:SB_HEADERS})
+    if(!r.ok){const t=await r.text();document.getElementById('sendersList').innerHTML='<p style="color:#991b1b">خطأ: '+r.status+' '+t+'</p>';return}
+    const data=await r.json()
   const el=document.getElementById('sendersList')
   document.getElementById('senderCount').textContent='('+(data?data.length:0)+')'
   if(!data||data.length===0){el.innerHTML='<p style="color:var(--text-muted)">لا يوجد مرسلين</p>';return}
   const rows=data.map(s=>'<tr><td>'+esc(s.name)+'</td><td dir="ltr" style="text-align:left">'+esc(s.phone)+'</td><td>'+(s.last_seen?new Date(s.last_seen).toLocaleDateString('ar-OM'):'-')+'</td></tr>').join('')
   el.innerHTML='<table><thead><tr><th>الاسم</th><th>الهاتف</th><th>آخر ظهور</th></tr></thead><tbody>'+rows+'</tbody></table>'
+  }catch(e){document.getElementById('sendersList').innerHTML='<p style="color:#991b1b">استثناء: '+e.message+'</p>'}
 }
 
 async function adminCancel(id){
