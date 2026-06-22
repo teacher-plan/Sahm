@@ -85,6 +85,7 @@ th { color:var(--text-muted); font-size:11px; text-transform:uppercase; }
           <div class="tab active" data-tab="couriers" onclick="switchTab('couriers')">🧑 المندوبين</div>
           <div class="tab" data-tab="stats" onclick="switchTab('stats')">📊 الإحصائيات</div>
           <div class="tab" data-tab="orders" onclick="switchTab('orders')">📦 الطلبات</div>
+          <div class="tab" data-tab="senders" onclick="switchTab('senders')">👤 المرسلين</div>
           <div class="tab" data-tab="generate" onclick="switchTab('generate')">➕ توليد مندوب</div>
         </div>
       </div>
@@ -117,6 +118,12 @@ th { color:var(--text-muted); font-size:11px; text-transform:uppercase; }
     <div id="tab-stats" class="glass">
       <h3>📊 إحصائيات شاملة</h3>
       <div id="statsContent" style="font-size:13px;color:var(--text-muted);">جاري التحميل...</div>
+    </div>
+
+    <!-- Tab: المرسلين -->
+    <div id="tab-senders" class="glass">
+      <h3>👤 قائمة المرسلين <span id="senderCount" style="color:var(--text-muted);font-size:13px;"></span></h3>
+      <div id="sendersList"><p style="color:var(--text-muted)">جاري التحميل...</p></div>
     </div>
 
     <!-- Tab: المندوبين -->
@@ -165,7 +172,7 @@ function adminLogin(){
     sessionStorage.setItem('admin_logged','true')
     document.getElementById('adminLogin').classList.add('hidden')
     document.getElementById('adminPanel').classList.remove('hidden')
-    loadCouriers();loadOrders();loadStats();switchTab('couriers')
+    loadCouriers();loadOrders();loadStats();loadSenders();switchTab('couriers')
     document.getElementById('genUsername').value=genRandomUsername()
     document.getElementById('genPassword').value=genRandomPassword()
   }else{
@@ -186,6 +193,7 @@ function switchTab(tab){
   document.getElementById('tab-'+tab).classList.remove('hidden')
   if(tab==='generate'){document.getElementById('genUsername').value=genRandomUsername();document.getElementById('genPassword').value=genRandomPassword();loadGeneratedCouriers()}
   if(tab==='stats')loadStats()
+  if(tab==='senders')loadSenders()
 }
 
 async function generateCourier(){
@@ -255,6 +263,15 @@ async function loadOrders(){
     return '<tr><td>'+esc(o.tracking||'-')+'</td><td>'+esc(o.title||'-')+'</td><td>'+esc(o.sender_phone||'-')+'</td><td>'+esc(o.governorate||'-')+'</td><td>'+(statusMap[o.status]||'')+' '+esc(o.status||'-')+'</td><td>'+(o.courier_name?esc(o.courier_name):'-')+'</td><td>'+(o.status==='pending'?'<button class="btn btn-sm btn-danger" onclick="adminCancel(\''+o.id+'\')" style="margin-left:4px;">إلغاء</button>':'')+'<button class="btn btn-sm btn-danger" onclick="adminDelete(\''+o.id+'\')" style="background:#991b1b;color:white;margin-right:4px;">🗑️ حذف</button></td></tr>'
   }).join('')
   el.innerHTML='<table><thead><tr><th>التتبع</th><th>الطرد</th><th>المرسل</th><th>المحافظة</th><th>الحالة</th><th>المندوب</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'
+}
+
+async function loadSenders(){
+  const{data}=await sbFetch('senders?select=*&order=last_seen.desc')
+  const el=document.getElementById('sendersList')
+  document.getElementById('senderCount').textContent='('+(data?data.length:0)+')'
+  if(!data||data.length===0){el.innerHTML='<p style="color:var(--text-muted)">لا يوجد مرسلين</p>';return}
+  const rows=data.map(s=>'<tr><td>'+esc(s.name)+'</td><td dir="ltr" style="text-align:left">'+esc(s.phone)+'</td><td>'+(s.last_seen?new Date(s.last_seen).toLocaleDateString('ar-OM'):'-')+'</td></tr>').join('')
+  el.innerHTML='<table><thead><tr><th>الاسم</th><th>الهاتف</th><th>آخر ظهور</th></tr></thead><tbody>'+rows+'</tbody></table>'
 }
 
 async function adminCancel(id){

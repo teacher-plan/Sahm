@@ -277,8 +277,28 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 <div class="container">
   <div id="alert"></div>
 
+  <!-- Login Section -->
+  <div id="loginSection">
+    <div class="page-header">
+      <h2>تسجيل الدخول</h2>
+      <p>أدخل اسمك ورقم هاتفك للمتابعة</p>
+    </div>
+    <div class="glass" style="max-width:420px;margin:0 auto;">
+      <div id="loginAlert"></div>
+      <div class="form-group">
+        <label>الاسم</label>
+        <input type="text" id="senderName" placeholder="الاسم كاملاً">
+      </div>
+      <div class="form-group">
+        <label>رقم الهاتف</label>
+        <input type="tel" id="senderPhoneLogin" placeholder="9XXXXXXXX">
+      </div>
+      <button class="btn-next" onclick="senderLogin()">دخول ➞</button>
+    </div>
+  </div>
+
   <!-- Landing: Choose Action -->
-  <div id="landingSection">
+  <div id="landingSection" class="hidden">
     <div class="page-header">
       <h2>مرحباً بك في سهم</h2>
       <p>ماذا تريد أن تفعل؟</p>
@@ -552,6 +572,20 @@ async function sbInsertOrder(order){
   const{data,error}=await sbFetch('orders?select=tracking',{method:'POST',body:JSON.stringify(order)})
   if(error){useLocalFallback=true;return{data:null,error}}
   return{data,error:null}
+}
+
+/* ===== Sender Auth ===== */
+async function senderLogin(){
+  const name=document.getElementById('senderName').value.trim()
+  const phone=document.getElementById('senderPhoneLogin').value.trim()
+  if(!name||!phone){showAlert('يرجى إدخال الاسم ورقم الهاتف','error');return}
+  localStorage.setItem('sender_name',name)
+  localStorage.setItem('sender_phone',phone)
+  localStorage.setItem('sender_logged','true')
+  document.getElementById('f-sender-phone').value=phone
+  document.getElementById('loginSection').classList.add('hidden')
+  document.getElementById('landingSection').classList.remove('hidden')
+  await sbFetch('senders',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify({name,phone,last_seen:new Date().toISOString()})}).catch(()=>{})
 }
 
 async function sbUpdateOrder(id,updates){
@@ -963,6 +997,20 @@ function orderCardHTML(o){
 
 function esc(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
+// Auto login check
+const savedName=localStorage.getItem('sender_name')
+const savedPhone=localStorage.getItem('sender_phone')
+const savedLogged=localStorage.getItem('sender_logged')
+if(savedLogged==='true'&&savedName&&savedPhone){
+  document.getElementById('senderName').value=savedName
+  document.getElementById('senderPhoneLogin').value=savedPhone
+  document.getElementById('f-sender-phone').value=savedPhone
+  document.getElementById('loginSection').classList.add('hidden')
+  document.getElementById('landingSection').classList.remove('hidden')
+  await sbFetch('senders',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify({name:savedName,phone:savedPhone,last_seen:new Date().toISOString()})}).catch(()=>{})
+}else{
+  document.getElementById('loginSection').classList.remove('hidden')
+}
 fetchOrders()
 </script>
 </body>
