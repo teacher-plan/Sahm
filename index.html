@@ -614,7 +614,10 @@ async function senderLogin(){
   showUserBar(name)
   document.getElementById('loginSection').classList.add('hidden')
   document.getElementById('landingSection').classList.remove('hidden')
-  try{await fetch(SUPABASE_URL+'/rest/v1/senders',{method:'POST',headers:{...SB_HEADERS,'Prefer':'return=minimal'},body:JSON.stringify({name,phone,last_seen:new Date().toISOString()})})}catch(e){console.error('sender save exception:',e)}
+  try{
+    const r2=await fetch(SUPABASE_URL+'/rest/v1/senders',{method:'POST',headers:{...SB_HEADERS,'Prefer':'return=minimal'},body:JSON.stringify({name,phone,last_seen:new Date().toISOString()})})
+    if(!r2.ok){const t2=await r2.text();console.error('POST senders failed:',r2.status,t2)}
+  }catch(e){console.error('sender save exception:',e)}
 }
 
 async function sbUpdateOrder(id,updates){
@@ -1039,7 +1042,7 @@ async function initPage(){
     showUserBar(savedName)
     document.getElementById('loginSection').classList.add('hidden')
     document.getElementById('landingSection').classList.remove('hidden')
-    try{await fetch(SUPABASE_URL+'/rest/v1/senders',{method:'POST',headers:{...SB_HEADERS,'Prefer':'return=minimal'},body:JSON.stringify({name:savedName,phone:savedPhone,last_seen:new Date().toISOString()})})}catch(e){console.error('sender save exception:',e)}
+    try{const r2=await fetch(SUPABASE_URL+'/rest/v1/senders',{method:'POST',headers:{...SB_HEADERS,'Prefer':'return=minimal'},body:JSON.stringify({name:savedName,phone:savedPhone,last_seen:new Date().toISOString()})});if(!r2.ok){const t2=await r2.text();console.error('POST senders init failed:',r2.status,t2)}}catch(e){console.error('sender save exception:',e)}
   }else{
     document.getElementById('loginSection').classList.remove('hidden')
   }
