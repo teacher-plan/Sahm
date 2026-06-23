@@ -30,6 +30,9 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 .header { display:flex; align-items:center; justify-content:center; flex-direction:column; }
 .header h1 { font-size:26px; color:white; position:relative; z-index:1; display:flex; align-items:center; justify-content:center; gap:10px; text-shadow:0 2px 8px rgba(0,0,0,0.1); animation:fadeInDown 0.6s ease-out; }
 .header p { font-size:14px; color:rgba(255,255,255,0.8); margin-top:4px; position:relative; z-index:1; animation:fadeInDown 0.8s ease-out; }
+.logo { display:inline-flex; align-items:center; justify-content:center; gap:10px; text-decoration:none; }
+.logo-icon { width:36px; height:36px; flex-shrink:0; }
+.logo-text { font-size:26px; font-weight:800; color:white; letter-spacing:-0.5px; }
 .header-bar { display:flex; align-items:center; justify-content:space-between; width:100%; max-width:1100px; margin:0 auto; padding:12px 20px; }
 .header-bar .name { color:white; font-size:14px; font-weight:600; }
 .header-bar .logout-btn { background:rgba(255,255,255,0.15); color:white; border:1px solid rgba(255,255,255,0.3); padding:6px 14px; border-radius:8px; font-size:13px; cursor:pointer; transition:var(--transition); }
@@ -219,7 +222,10 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
     <span class="name" id="courierName">👤 المندوب</span>
     <button class="logout-btn" onclick="logout()">🚪 خروج</button>
   </div>
-  <h1>🚚 سهم</h1>
+  <h1 style="display:flex;align-items:center;justify-content:center;gap:10px">
+    <svg width="36" height="36" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/><path d="M12 28 L28 12 M20 12 L28 12 M28 12 L28 20" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span style="font-size:26px;font-weight:800">سهم</span>
+  </h1>
   <p>صفحة المندوبين - طلبات التوصيل في سلطنة عمان</p>
 </div>
 
