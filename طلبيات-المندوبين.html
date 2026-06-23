@@ -86,6 +86,7 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 .s-in_transit { background:#ede9fe; color:#5b21b6; }
 .s-delivered { background:#d1fae5; color:#065f46; }
 .s-cancelled { background:#fef2f2; color:#991b1b; }
+.s-failed { background:#fef3c7; color:#92400e; }
 
 .order-tracking { font-size:11px; color:var(--text-muted); font-weight:600; font-family:monospace; }
 .order-amount { font-size:19px; font-weight:700; color:var(--primary); }
@@ -121,6 +122,12 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 .btn-transit:hover { background:#7c3aed; color:white; }
 .btn-done { background:#d1fae5; color:#065f46; }
 .btn-done:hover { background:#059669; color:white; }
+.btn-release { background:#fef3c7; color:#92400e; }
+.btn-release:hover { background:#fbbf24; color:white; }
+.btn-fail { background:#fef2f2; color:#991b1b; }
+.btn-fail:hover { background:#ef4444; color:white; }
+.btn-wa { display:flex; align-items:center; justify-content:center; gap:6px; flex:1; padding:11px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:var(--transition); min-width:100px; background:#dcfce7; color:#166534; text-decoration:none; }
+.btn-wa:hover { background:#22c55e; color:white; }
 
 .booked-info { margin-top:12px; padding:10px 14px; background:var(--secondary-light); border-radius:var(--radius-sm); font-size:13px; text-align:center; }
 .booked-info .label { font-weight:600; color:#92400e; }
@@ -332,8 +339,15 @@ const cId=sessionStorage.getItem('courier_id');const cName=sessionStorage.getIte
 if(!cId||!cUser){window.location.href='تسجيل-دخول-مندوب.html'}
 document.getElementById('courierName').textContent='👤 '+cName
 
+let cPhone=sessionStorage.getItem('courier_phone')||''
+if(!cPhone&&cId){
+  sbFetch('couriers?id=eq.'+cId+'&select=phone').then(({data})=>{
+    if(data&&data[0]&&data[0].phone){cPhone=data[0].phone;sessionStorage.setItem('courier_phone',cPhone)}
+  })
+}
+
 function logout(){
-  sessionStorage.removeItem('courier_id');sessionStorage.removeItem('courier_name');sessionStorage.removeItem('courier_username')
+  sessionStorage.removeItem('courier_id');sessionStorage.removeItem('courier_name');sessionStorage.removeItem('courier_username');sessionStorage.removeItem('courier_phone')
   window.location.href='تسجيل-دخول-مندوب.html'
 }
 
@@ -354,7 +368,7 @@ async function sbUpdateOrder(id,updates){
 
 
 
-const STATUS_MAP={pending:'قيد الانتظار',booked:'تم الحجز',picked_up:'تم الاستلام',in_transit:'في الطريق',delivered:'تم التوصيل',cancelled:'ملغي'}
+const STATUS_MAP={pending:'قيد الانتظار',booked:'تم الحجز',picked_up:'تم الاستلام',in_transit:'في الطريق',delivered:'تم التوصيل',cancelled:'ملغي',failed:'فشل التسليم'}
 let orders=[]
 
 function loadLocalOrders(){try{orders=JSON.parse(localStorage.getItem(DB_KEY))||[]}catch(e){orders=[]}}
@@ -452,10 +466,10 @@ function renderOrders(){
   const filtered=getFilteredOrders()
   const available=filtered.filter(o=>o.status==='pending')
   const active=filtered.filter(o=>['booked','picked_up','in_transit'].includes(o.status))
-  const done=filtered.filter(o=>['delivered','cancelled'].includes(o.status))
+  const done=filtered.filter(o=>['delivered','cancelled','failed'].includes(o.status))
   const totalAvail=orders.filter(o=>o.status==='pending').length
   const totalActive=orders.filter(o=>['booked','picked_up','in_transit'].includes(o.status)).length
-  const totalDone=orders.filter(o=>['delivered','cancelled'].includes(o.status)).length
+  const totalDone=orders.filter(o=>['delivered','cancelled','failed'].includes(o.status)).length
 
   document.getElementById('stats').textContent='🚚 '+totalAvail+' متاحة'
 
@@ -541,16 +555,52 @@ async function loadCourierStats(){
 }
 
 async function bookOrder(id){
-  const phone=prompt('الرجاء إدخال رقم هاتفك للتواصل:')
-  if(!phone)return
+  if(!cPhone){showAlert('تعذر تحديد رقم هاتفك، يرجى إعادة تسجيل الدخول');return}
   if(useLocalFallback){
     const o=orders.find(x=>x.id===id);if(!o)return
-    o.status='booked';o.booked_by=phone;o.booked_at=new Date().toISOString();o.courier_id=cId;o.courier_name=cName;saveLocalOrders()
+    o.status='booked';o.booked_by=cPhone;o.booked_at=new Date().toISOString();o.courier_id=cId;o.courier_name=cName;saveLocalOrders()
     showAlert('تم حجز الطلبية بنجاح!');renderOrders();return
   }
-  const{error}=await sbUpdateOrder(id,{status:'booked',booked_by:phone,booked_at:new Date().toISOString(),courier_id:cId,courier_name:cName})
+  const{error}=await sbUpdateOrder(id,{status:'booked',booked_by:cPhone,booked_at:new Date().toISOString(),courier_id:cId,courier_name:cName})
   if(error){showAlert('خطأ: '+error.message);return}
   showAlert('تم حجز الطلبية بنجاح!');fetchOrders()
+}
+
+async function releaseOrder(id){
+  if(!confirm('تحرير هذا الطلب؟ سيعود متاحاً لجميع المندوبين.'))return
+  const updates={status:'pending',courier_id:'',courier_name:'',booked_by:''}
+  if(useLocalFallback){
+    const o=orders.find(x=>x.id===id);if(!o)return
+    Object.assign(o,updates);saveLocalOrders()
+    showAlert('تم تحرير الطلب');renderOrders();return
+  }
+  const{error}=await sbUpdateOrder(id,updates)
+  if(error){showAlert('خطأ: '+error.message);return}
+  showAlert('تم تحرير الطلب');fetchOrders()
+}
+
+async function markFailed(id){
+  if(!confirm('تأكيد فشل التسليم لهذا الطلب؟'))return
+  const updates={status:'failed'}
+  if(useLocalFallback){
+    const o=orders.find(x=>x.id===id);if(!o)return
+    Object.assign(o,updates);saveLocalOrders()
+    showAlert('تم تسجيل فشل التسليم');renderOrders();return
+  }
+  const{error}=await sbUpdateOrder(id,updates)
+  if(error){showAlert('خطأ: '+error.message);return}
+  showAlert('تم تسجيل فشل التسليم');fetchOrders()
+}
+
+function waMsgToSender(o){
+  let loc=o.pickup_location||''
+  if(o.governorate)loc+=' - '+o.governorate+(o.wilayat?(' - '+o.wilayat):'')
+  return 'مرحباً، معك '+cName+' مندوب التوصيل من سهم 🚚\nتم حجز طلبك رقم '+(o.tracking||'')+' ("'+(o.title||'')+'")\nسأتوجه للاستلام من: '+loc+'\nبالتوفيق 🙏'
+}
+function waMsgToRecipient(o){
+  let loc=o.dropoff_location||''
+  if(o.recipient_governorate)loc+=' - '+o.recipient_governorate+(o.recipient_wilayat?(' - '+o.recipient_wilayat):'')
+  return 'مرحباً، معك '+cName+' مندوب التوصيل من سهم 🚚\nلديك طلب توصيل قادم (رقم التتبع: '+(o.tracking||'')+')\nالطرد: '+(o.title||'')+'\nسأتواصل معك عند الاقتراب من موقع التوصيل: '+loc
 }
 
 async function updateStatus(id,newStatus){
@@ -572,7 +622,7 @@ function cardHTML(o){
   const s=o.status
   let cardClass=''
   if(s==='delivered')cardClass=' done'
-  else if(s==='cancelled')cardClass=' cancelled'
+  else if(s==='cancelled'||s==='failed')cardClass=' cancelled'
 
   let descHTML=o.description?'<p class="order-desc">'+esc(o.description)+'</p>':''
   let recipHTML=o.recipient_phone?'<div class="detail-row"><span class="detail-label">📞 المستلم:</span><a href="tel:'+esc(o.recipient_phone)+'" class="phone-link">'+esc(o.recipient_phone)+'</a></div>':''
@@ -605,16 +655,28 @@ function cardHTML(o){
   if(s==='pending'){
     actionsHTML='<div class="order-actions"><button class="btn-book" onclick="bookOrder(\''+o.id+'\')">📌 حجز الطلبية</button></div>'
   }else if(s==='booked'&&o.booked_by){
-    actionsHTML='<div class="order-actions"><button class="btn-pick" onclick="updateStatus(\''+o.id+'\',\'picked_up\')">📦 تم الاستلام</button></div>'
+    actionsHTML='<div class="order-actions"><button class="btn-pick" onclick="updateStatus(\''+o.id+'\',\'picked_up\')">📦 تم الاستلام</button>'
+    actionsHTML+='<button class="btn-release" onclick="releaseOrder(\''+o.id+'\')">↩️ تحرير الحجز</button></div>'
     actionsHTML+='<div class="booked-info"><span class="label">🚚 محجوزة • </span> '+esc(o.booked_by)+'</div>'
   }else if(s==='picked_up'){
     actionsHTML='<div class="order-actions"><button class="btn-transit" onclick="updateStatus(\''+o.id+'\',\'in_transit\')">🚚 في الطريق</button></div>'
   }else if(s==='in_transit'){
-    actionsHTML='<div class="order-actions"><button class="btn-done" onclick="updateStatus(\''+o.id+'\',\'delivered\')">✅ تم التوصيل</button></div>'
+    actionsHTML='<div class="order-actions"><button class="btn-done" onclick="updateStatus(\''+o.id+'\',\'delivered\')">✅ تم التوصيل</button>'
+    actionsHTML+='<button class="btn-fail" onclick="markFailed(\''+o.id+'\')">⚠️ فشل التسليم</button></div>'
   }else if(s==='delivered'){
     actionsHTML='<div class="booked-info" style="background:#d1fae5;color:#065f46;">✅ تم التوصيل بنجاح</div>'
   }else if(s==='cancelled'){
     actionsHTML='<div class="booked-info" style="background:#fef2f2;color:#991b1b;">❌ ملغي</div>'
+  }else if(s==='failed'){
+    actionsHTML='<div class="booked-info" style="background:#fef3c7;color:#92400e;">⚠️ فشل التسليم</div>'
+  }
+
+  let contactHTML=''
+  if(['booked','picked_up','in_transit'].includes(s)){
+    contactHTML='<div class="order-actions">'
+    if(o.sender_phone)contactHTML+='<a class="btn-wa" href="'+waLink(o.sender_phone,waMsgToSender(o))+'" target="_blank" rel="noopener">💬 واتساب المرسل</a>'
+    if(o.recipient_phone)contactHTML+='<a class="btn-wa" href="'+waLink(o.recipient_phone,waMsgToRecipient(o))+'" target="_blank" rel="noopener">💬 واتساب المستلم</a>'
+    contactHTML+='</div>'
   }
 
   return '<div class="order-card'+cardClass+'">'+
@@ -630,7 +692,7 @@ function cardHTML(o){
     '<div class="order-meta">'+fragileHTML+weightHTML+typeHTML+timeHTML+'</div>'+
     '<div class="order-details">'+locLink+locLink2+
     '<div class="detail-row"><span class="detail-label">📞 المرسل:</span><a href="tel:'+esc(o.sender_phone)+'" class="phone-link">'+esc(o.sender_phone)+'</a></div>'+
-    recipHTML+notesHTML+'</div>'+photosHTML+actionsHTML+'</div>'
+    recipHTML+notesHTML+'</div>'+photosHTML+actionsHTML+contactHTML+'</div>'
 }
 
 function escAttr(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}

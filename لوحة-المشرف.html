@@ -275,7 +275,7 @@ async function loadOrders(){
   document.getElementById('orderCount').textContent='('+data.length+')'
   if(data.length===0){el.innerHTML='<p style="color:var(--text-muted)">لا توجد طلبات</p>';return}
   const rows=data.map(o=>{
-    const statusMap={pending:'⏳',booked:'📌',picked_up:'📦',in_transit:'🚚',delivered:'✅',cancelled:'❌'}
+    const statusMap={pending:'⏳',booked:'📌',picked_up:'📦',in_transit:'🚚',delivered:'✅',cancelled:'❌',failed:'⚠️'}
     return '<tr><td>'+esc(o.tracking||'-')+'</td><td>'+esc(o.title||'-')+'</td><td>'+esc(o.sender_phone||'-')+'</td><td>'+esc(o.governorate||'-')+'</td><td>'+(statusMap[o.status]||'')+' '+esc(o.status||'-')+'</td><td>'+(o.courier_name?esc(o.courier_name):'-')+'</td><td>'+(o.status==='pending'?'<button class="btn btn-sm btn-danger" onclick="adminCancel(\''+o.id+'\')" style="margin-left:4px;">إلغاء</button>':'')+'<button class="btn btn-sm btn-danger" onclick="adminDelete(\''+o.id+'\')" style="background:#991b1b;color:white;margin-right:4px;">🗑️ حذف</button></td></tr>'
   }).join('')
   el.innerHTML='<table><thead><tr><th>التتبع</th><th>الطرد</th><th>المرسل</th><th>المحافظة</th><th>الحالة</th><th>المندوب</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'

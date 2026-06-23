@@ -111,6 +111,7 @@ async function courierLogin(){
   sessionStorage.setItem('courier_id',courier.id)
   sessionStorage.setItem('courier_name',courier.name)
   sessionStorage.setItem('courier_username',courier.username)
+  sessionStorage.setItem('courier_phone',courier.phone||'')
   if(courier.has_profile){
     window.location.href='طلبيات-المندوبين.html'
   }else{
@@ -129,6 +130,7 @@ async function saveProfile(){
   const btn=document.querySelector('#profileBox .btn');btn.disabled=true;btn.textContent='⏳ جاري الحفظ...'
   await sbFetch('couriers?id=eq.'+currentCourierId,{method:'PATCH',body:JSON.stringify({name,phone,governorate:gov,vehicle_type:vehicle,has_profile:true})})
   sessionStorage.setItem('courier_name',name)
+  sessionStorage.setItem('courier_phone',phone)
   showAlert('profileAlert','✅ تم حفظ البيانات! جاري التحويل...','good')
   setTimeout(()=>{window.location.href='طلبيات-المندوبين.html'},800)
 }

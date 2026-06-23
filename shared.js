@@ -28,6 +28,13 @@ function showToast(msg,type){
   setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity 0.3s';setTimeout(()=>el.remove(),300)},3000)
 }
 
+function waLink(phone,msg){
+  let p=(phone||'').toString().replace(/[^0-9]/g,'')
+  if(p.length===8)p='968'+p
+  else if(p.length===9&&p[0]==='0')p='968'+p.slice(1)
+  return 'https://wa.me/'+p+'?text='+encodeURIComponent(msg)
+}
+
 function loading(show){
   let el=document.getElementById('loadingOverlay')
   if(!show){if(el)el.remove();return}
