@@ -16,3 +16,30 @@ async function sbFetch(path,opts={}){
 }
 
 function esc(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+function showToast(msg,type){
+  const el=document.createElement('div')
+  el.style.cssText='position:fixed;top:20px;right:50%;transform:translateX(50%);z-index:99999;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,0.12);animation:slideDown 0.3s ease-out;direction:rtl;'
+  if(type==='error'){el.style.background='#fef2f2';el.style.color='#991b1b';el.style.border='1px solid #fecaca'}
+  else if(type==='success'){el.style.background='#d1fae5';el.style.color='#065f46';el.style.border='1px solid #a7f3d0'}
+  else{el.style.background='#dbeafe';el.style.color='#1e40af';el.style.border='1px solid #bfdbfe'}
+  el.textContent=msg
+  document.body.appendChild(el)
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity 0.3s';setTimeout(()=>el.remove(),300)},3000)
+}
+
+function loading(show){
+  let el=document.getElementById('loadingOverlay')
+  if(!show){if(el)el.remove();return}
+  if(el)return
+  el=document.createElement('div')
+  el.id='loadingOverlay'
+  el.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.7);backdrop-filter:blur(4px);z-index:99998;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;'
+  el.innerHTML='<div style="width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#0f766e;border-radius:50%;animation:spin 0.8s linear infinite;"></div><div style="color:#64748b;font-size:14px;font-weight:500;">جاري التحميل...</div>'
+  document.body.appendChild(el)
+  if(!document.getElementById('loadingStyle')){
+    const s=document.createElement('style');s.id='loadingStyle'
+    s.textContent='@keyframes spin{to{transform:rotate(360deg)}}'
+    document.head.appendChild(s)
+  }
+}
