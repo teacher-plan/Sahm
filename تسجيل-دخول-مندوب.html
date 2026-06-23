@@ -86,22 +86,9 @@ body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); backgr
   <button class="btn btn-primary" onclick="saveProfile()">💾 حفظ البيانات</button>
 </div>
 
+<script src="shared.js"></script>
 <script>
-const SUPABASE_URL='https://qwnwrbbsozegbhwsktsa.supabase.co'
-const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3bndyYmJzb3plZ2Jod3NrdHNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNjMzMzAsImV4cCI6MjA5NzYzOTMzMH0.UnvN3VHtoSz-DRFCMvnhJ6feoi4ao41sDB_a3GRn8WE'
-const SB_HEADERS={'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Accept':'application/json'}
-const OMAN_DATA={"مسقط":["مسقط","مطرح","العامرات","بوشر","السيب","قريات"],"ظفار":["صلالة","طاقة","مرباط","رخيوت","ثمريت","ضلكوت","المزيونة","مقشن","شليم وجزر الحلانيات","سدح"],"مسندم":["خصب","دبا","بخاء","مدحاء"],"البريمي":["البريمي","محضة","السنينة"],"الداخلية":["نزوى","سمائل","بهلا","أدم","الحمراء","منح","إزكي","بدبد","الجبل الأخضر"],"الظاهرة":["عبري","ينقل","ضنك"],"شمال الباطنة":["صحار","شناص","لوى","صحم","الخابورة","السويق"],"جنوب الباطنة":["الرستاق","المصنعة","بركاء","نخل","وادي المعاول","العوابي"],"شمال الشرقية":["إبراء","المضيبي","بدية","القابل","وادي بني خالد","دماء والطائيين","سناو"],"جنوب الشرقية":["صور","جعلان بني بو علي","جعلان بني بو حسن","الكامل والوافي","مصيرة"],"الوسطى":["هيما","محوت","الدقم","الجازر"]}
 let currentCourierId=null
-
-async function sbFetch(path,opts={}){
-  const{headers:extraHeaders,...rest}=opts
-  try{
-    const r=await fetch(SUPABASE_URL+'/rest/v1/'+path,{headers:{...SB_HEADERS,...extraHeaders},...rest})
-    if(!r.ok)throw new Error(r.statusText)
-    if(opts.method==='PATCH'||opts.method==='DELETE')return{data:null,error:null}
-    return{data:await r.json(),error:null}
-  }catch(e){return{data:null,error:e}}
-}
 
 function showAlert(id,msg,type){
   document.getElementById(id).innerHTML='<div class="alert-box '+type+'">'+msg+'</div>'
