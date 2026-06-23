@@ -118,6 +118,9 @@ body { font-family:'Cairo','Segoe UI',system-ui,-apple-system,sans-serif; backgr
 .map-modal-footer .btn-confirm-loc:hover { opacity:0.9; }
 .map-modal-footer .btn-confirm-loc:disabled { opacity:0.5; cursor:not-allowed; }
 .drag-hint { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:white; padding:6px 16px; border-radius:20px; font-size:12px; z-index:1000; pointer-events:none; }
+.locate-btn { position:absolute; bottom:70px; left:14px; width:44px; height:44px; border-radius:50%; background:white; border:none; box-shadow:0 4px 12px rgba(0,0,0,0.18); font-size:19px; cursor:pointer; z-index:1000; display:flex; align-items:center; justify-content:center; transition:var(--transition); }
+.locate-btn:hover { background:var(--primary-light); }
+.locate-btn:disabled { opacity:0.6; cursor:wait; }
 @media(max-width:480px){
   .map-modal-content { border-radius:16px 16px 0 0; max-height:95vh; }
   .map-modal-header { padding:12px 16px; }
@@ -553,6 +556,7 @@ body { font-family:'Cairo','Segoe UI',system-ui,-apple-system,sans-serif; backgr
     </div>
     <div class="map-modal-body">
       <div id="map-container"></div>
+      <button class="locate-btn" id="locateBtn" onclick="locateMe(false)" title="🎯 تحديد موقعي الحالي بدقة">🎯</button>
       <div class="pulse-dot"></div>
       <div class="drag-hint">🔄 اسحب المؤشر لتحديد الموقع</div>
     </div>
@@ -748,16 +752,8 @@ function initMap(){
   L.control.zoom({position:'topright'}).addTo(mapInstance)
 
   mapMarker=L.marker([23.5880,58.3829],{draggable:true}).addTo(mapInstance)
-  reverseGeocode(23.5880,58.3829)
-
-  if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(function(pos){
-      const lat=pos.coords.latitude,lng=pos.coords.longitude
-      mapInstance.setView([lat,lng],15)
-      mapMarker.setLatLng([lat,lng])
-      reverseGeocode(lat,lng)
-    },function(){},{enableHighAccuracy:true,timeout:8000})
-  }
+  document.getElementById('addrPreview').textContent='📡 جاري تحديد موقعك بدقة...'
+  locateMe(true)
 
   mapMarker.on('dragend',function(){
     const pos=mapMarker.getLatLng()
@@ -767,6 +763,27 @@ function initMap(){
     mapMarker.setLatLng(e.latlng)
     reverseGeocode(e.latlng.lat,e.latlng.lng)
   })
+}
+
+function locateMe(isInitial){
+  const btn=document.getElementById('locateBtn')
+  if(!navigator.geolocation){
+    if(isInitial)reverseGeocode(23.5880,58.3829)
+    else showAlert('المتصفح لا يدعم تحديد الموقع','error')
+    return
+  }
+  if(btn){btn.disabled=true;btn.textContent='📡'}
+  navigator.geolocation.getCurrentPosition(function(pos){
+    const lat=pos.coords.latitude,lng=pos.coords.longitude
+    mapInstance.setView([lat,lng],16)
+    mapMarker.setLatLng([lat,lng])
+    reverseGeocode(lat,lng)
+    if(btn){btn.disabled=false;btn.textContent='🎯'}
+  },function(){
+    if(isInitial)reverseGeocode(23.5880,58.3829)
+    else showAlert('تعذر تحديد موقعك، تأكد من تفعيل خدمة الموقع والصلاحيات','error')
+    if(btn){btn.disabled=false;btn.textContent='🎯'}
+  },{enableHighAccuracy:true,timeout:10000,maximumAge:0})
 }
 
 async function reverseGeocode(lat,lng){
