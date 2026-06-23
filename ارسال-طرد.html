@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>سهم - إرسال طرد</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='11' fill='%230f766e'/%3E%3Cpath d='M13 27 L27 13 M27 13 H18 M27 13 V22' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='27' cy='13' r='2.2' fill='%23d97706'/%3E%3Cpath d='M11.5 29.5 L16 25' stroke='white' stroke-width='2' stroke-linecap='round' opacity='0.45'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -17,7 +21,7 @@
   --status-transit: #7c3aed; --status-done: #059669; --status-cancel: #ef4444;
 }
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--bg); background-image:radial-gradient(#e2e8f0 0.8px,transparent 0.8px); background-size:24px 24px; color:var(--text); line-height:1.7; min-height:100vh; position:relative; overflow-x:hidden; -webkit-text-size-adjust:100%; }
+body { font-family:'Cairo','Segoe UI',system-ui,-apple-system,sans-serif; background:var(--bg); background-image:radial-gradient(#e2e8f0 0.8px,transparent 0.8px); background-size:24px 24px; color:var(--text); line-height:1.7; min-height:100vh; position:relative; overflow-x:hidden; -webkit-text-size-adjust:100%; }
 
 /* Background Art */
 .bg-art { position:fixed; pointer-events:none; z-index:0; user-select:none; }
@@ -31,7 +35,7 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 
 .container, .footer, .header { position:relative; z-index:1; }
 
-.header { background:linear-gradient(135deg,#0f766e 0%,#0d9488 100%); padding:24px 20px; text-align:center; position:relative; overflow:hidden; }
+.header { background:linear-gradient(135deg,#115e59 0%,#0f766e 55%,#14b8a6 100%); padding:24px 20px; text-align:center; position:relative; overflow:hidden; }
 .header::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); opacity:0.4; }
 .header h1 { font-size:26px; color:white; position:relative; z-index:1; display:flex; align-items:center; justify-content:center; gap:10px; text-shadow:0 2px 8px rgba(0,0,0,0.1); animation:fadeInDown 0.6s ease-out; }
 .header p { font-size:14px; color:rgba(255,255,255,0.8); margin-top:4px; position:relative; z-index:1; animation:fadeInDown 0.8s ease-out; }
@@ -190,6 +194,7 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 .order-status.s-in_transit { background:#ede9fe; color:#5b21b6; }
 .order-status.s-delivered { background:#d1fae5; color:#065f46; }
 .order-status.s-cancelled { background:#fef2f2; color:#991b1b; }
+.order-status.s-failed { background:#fef3c7; color:#92400e; }
 
 .order-tracking { font-size:11px; color:var(--text-muted); font-weight:600; font-family:monospace; letter-spacing:0.5px; }
 .order-amount { font-size:17px; font-weight:700; color:var(--primary); }
@@ -216,6 +221,8 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 .btn-track:hover { background:var(--primary); color:white; }
 .btn-cancel { background:#fef2f2; color:#991b1b; }
 .btn-cancel:hover { background:#fecaca; }
+.btn-wa { display:flex; align-items:center; justify-content:center; gap:6px; flex:1; padding:9px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:var(--transition); background:#dcfce7; color:#166534; text-decoration:none; }
+.btn-wa:hover { background:#22c55e; color:white; }
 
 .empty-state { text-align:center; padding:36px 20px; color:var(--text-muted); border:2px dashed var(--border); border-radius:var(--radius-sm); font-size:14px; }
 
@@ -274,8 +281,8 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 
 <div class="header">
   <h1 style="display:flex;align-items:center;justify-content:center;gap:10px">
-    <svg width="36" height="36" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/><path d="M12 28 L28 12 M20 12 L28 12 M28 12 L28 20" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span style="font-size:26px;font-weight:800">سهم</span>
+    <svg width="36" height="36" viewBox="0 0 40 40" fill="none"><rect x="1" y="1" width="38" height="38" rx="11" fill="white"/><path d="M13 27 L27 13 M27 13 H18 M27 13 V22" stroke="url(#sahmArrow)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="27" cy="13" r="2.1" fill="#d97706"/><path d="M11.5 29.5 L16 25" stroke="#0d9488" stroke-width="2" stroke-linecap="round" opacity="0.35"/><defs><linearGradient id="sahmArrow" x1="13" y1="27" x2="27" y2="13"><stop stop-color="#0f766e"/><stop offset="1" stop-color="#0d9488"/></linearGradient></defs></svg>
+    <span style="font-size:26px;font-weight:800;letter-spacing:-0.5px">سهم</span>
   </h1>
   <p>صفحة إرسال الطلبيات - سلطنة عمان</p>
 </div>
@@ -561,7 +568,8 @@ async function sbUpload(bucket,path,file){
 }
 
 async function sbFetchOrders(){
-  const{data,error}=await sbFetch('orders?select=*&order=created_at.desc')
+  const phone=localStorage.getItem('sender_phone')||''
+  const{data,error}=await sbFetch('orders?select=*&sender_phone=eq.'+encodeURIComponent(phone)+'&order=created_at.desc')
   if(error){useLocalFallback=true;loadLocalOrders();return}
   orders=data||[]; renderMyOrders()
 }
@@ -620,7 +628,7 @@ async function sbUpdateOrder(id,updates){
 
 
 
-const STATUS_MAP={pending:'قيد الانتظار',booked:'تم الحجز',picked_up:'تم الاستلام',in_transit:'في الطريق',delivered:'تم التوصيل',cancelled:'ملغي'}
+const STATUS_MAP={pending:'قيد الانتظار',booked:'تم الحجز',picked_up:'تم الاستلام',in_transit:'في الطريق',delivered:'تم التوصيل',cancelled:'ملغي',failed:'فشل التسليم'}
 let orders=[]; let senderPhotoFile=null; let recipientPhotoFile=null; let orderPhotoFile=null
 
 function loadLocalOrders(){try{orders=JSON.parse(localStorage.getItem(DB_KEY))||[]}catch(e){orders=[]}}
@@ -641,6 +649,23 @@ function updateWilayats(){
   const gov=document.getElementById('f-governorate').value
   const wil=document.getElementById('f-wilayat');wil.innerHTML='<option value="">-- اختر الولاية --</option>'
   if(gov&&OMAN_DATA[gov])OMAN_DATA[gov].forEach(w=>{const o=document.createElement('option');o.value=w;o.textContent=w;wil.appendChild(o)})
+}
+
+function saveLastAddress(gov,wil,pickup){
+  localStorage.setItem('sender_last_gov',gov||'')
+  localStorage.setItem('sender_last_wil',wil||'')
+  localStorage.setItem('sender_last_pickup',pickup||'')
+}
+function fillLastAddress(){
+  const gov=localStorage.getItem('sender_last_gov')
+  const wil=localStorage.getItem('sender_last_wil')
+  const pickup=localStorage.getItem('sender_last_pickup')
+  if(gov){
+    document.getElementById('f-governorate').value=gov
+    updateWilayats()
+    if(wil)document.getElementById('f-wilayat').value=wil
+  }
+  if(pickup)document.getElementById('f-pickup').value=pickup
 }
 function updateRecipientWilayats(){
   const gov=document.getElementById('f-recipient-governorate').value
@@ -829,6 +854,7 @@ function startNewOrder(){
   document.getElementById('trackingSection').classList.add('hidden')
   document.getElementById('wizardSection').classList.remove('hidden')
   currentStep=1;updateStep()
+  fillLastAddress()
 }
 function showTracking(){
   document.getElementById('landingSection').classList.add('hidden')
@@ -890,6 +916,8 @@ async function submitOrder(){
   if(!orderPhotoFile){
     showAlert('يرجى إرفاق صورة للطرد','error');return
   }
+
+  saveLastAddress(governorate,wilayat,pickup)
 
   const btn=document.querySelector('.btn-submit');btn.disabled=true;btn.textContent='جاري الإرسال...'
 
@@ -966,16 +994,20 @@ async function cancelOrder(id){
 }
 
 function renderMyOrders(){
+  const phone=localStorage.getItem('sender_phone')||''
+  const mine=orders.filter(o=>o.sender_phone===phone)
   const el=document.getElementById('my-orders')
-  if(orders.length===0){el.innerHTML='<div class="empty-state">لا توجد طلبيات بعد</div>';return}
-  el.innerHTML='<div class="orders-list">'+orders.map(o=>orderCardHTML(o)).join('')+'</div>'
+  if(mine.length===0){el.innerHTML='<div class="empty-state">لا توجد طلبيات بعد</div>';return}
+  el.innerHTML='<div class="orders-list">'+mine.map(o=>orderCardHTML(o)).join('')+'</div>'
 }
+
+async function loadMyOrders(){await fetchOrders()}
 
 function orderCardHTML(o){
   const s=o.status
   let statusClass='s-'+s
   let cardClass=''
-  if(s==='cancelled')cardClass=' cancelled'
+  if(s==='cancelled'||s==='failed')cardClass=' cancelled'
   else if(s==='delivered')cardClass=' done'
 
   let descHTML=o.description?'<p class="order-desc">'+esc(o.description)+'</p>':''
@@ -1001,6 +1033,11 @@ function orderCardHTML(o){
     actionsHTML='<div class="order-actions"><button class="btn-cancel" onclick="cancelOrder(\''+o.id+'\')">❌ إلغاء الطلب</button></div>'
   }
 
+  let contactHTML=''
+  if(o.booked_by&&['booked','picked_up','in_transit'].includes(s)){
+    contactHTML='<div class="order-actions"><a class="btn-wa" href="'+waLink(o.booked_by,waMsgSenderToCourier(o))+'" target="_blank" rel="noopener">💬 تواصل مع المندوب'+(o.courier_name?(' ('+esc(o.courier_name)+')'):'')+'</a></div>'
+  }
+
   return '<div class="order-card'+cardClass+'">'+
     '<div class="order-header">'+
       '<span class="order-status '+statusClass+'">'+STATUS_MAP[s]+'</span>'+
@@ -1016,7 +1053,11 @@ function orderCardHTML(o){
     '<div class="detail-row"><span class="detail-label">📍 الاستلام:</span><span class="location-text">'+esc(o.pickup_location)+'</span></div>'+
     '<div class="detail-row"><span class="detail-label">📍 التوصيل:</span><span class="location-text">'+esc(o.dropoff_location)+'</span></div>'+
     '<div class="detail-row"><span class="detail-label">📞 المرسل:</span><a href="tel:'+esc(o.sender_phone)+'" class="phone-link">'+esc(o.sender_phone)+'</a></div>'+
-    recipHTML+notesHTML+'</div>'+photosHTML+actionsHTML+'</div>'
+    recipHTML+notesHTML+'</div>'+photosHTML+actionsHTML+contactHTML+'</div>'
+}
+
+function waMsgSenderToCourier(o){
+  return 'مرحباً '+(o.courier_name||'')+'، معي طلب رقم '+(o.tracking||'')+' ("'+(o.title||'')+'")\nأحتاج التواصل بخصوص الطلب 🙏'
 }
 
 
