@@ -351,6 +351,8 @@ body { font-family:'Cairo','Segoe UI',system-ui,-apple-system,sans-serif; backgr
       <div class="step" data-step="2"><span class="step-num">2</span><span class="step-label">المرسل</span></div>
       <div class="step-line"></div>
       <div class="step" data-step="3"><span class="step-num">3</span><span class="step-label">المستلم</span></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="4"><span class="step-num">4</span><span class="step-label">المراجعة</span></div>
     </div>
 
     <!-- Step 1: Package Details -->
@@ -508,7 +510,17 @@ body { font-family:'Cairo','Segoe UI',system-ui,-apple-system,sans-serif; backgr
       </div>
       <div style="display:flex;gap:10px;margin-top:16px;">
         <button class="btn-back-step" onclick="goToStep(2)">➞ السابق</button>
-        <button class="btn-submit" onclick="submitOrder()" style="flex:1;">📩 إرسال الطلب</button>
+        <button class="btn-next" onclick="goToStep(4)" style="flex:1;">📋 مراجعة الطلب ➞</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Review -->
+    <div class="glass form-section wizard-step hidden" id="step4">
+      <h3>✅ مراجعة الطلب</h3>
+      <div id="reviewContent"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button class="btn-back-step" onclick="goToStep(3)">➞ السابق</button>
+        <button class="btn-submit" onclick="submitOrder()" style="flex:1;">📩 تأكيد وإرسال الطلب</button>
       </div>
     </div>
   </div>
@@ -867,19 +879,77 @@ function backToLanding(){
   document.getElementById('trackingSection').classList.add('hidden')
   document.getElementById('landingSection').classList.remove('hidden')
 }
+function validateStep(n){
+  if(n===1){
+    const title=document.getElementById('f-title').value.trim()
+    const amount=document.getElementById('f-amount').value
+    if(!title){showAlert('يرجى إدخال عنوان الطرد','error');return false}
+    if(!amount||parseFloat(amount)<=0){showAlert('يرجى إدخال المبلغ','error');return false}
+    if(!orderPhotoFile){showAlert('يرجى إرفاق صورة للطرد','error');return false}
+    return true
+  }
+  if(n===2){
+    const gov=document.getElementById('f-governorate').value
+    const wil=document.getElementById('f-wilayat').value
+    const pickup=document.getElementById('f-pickup').value.trim()
+    const phone=document.getElementById('f-sender-phone').value.trim()
+    if(!gov||!wil){showAlert('يرجى اختيار المحافظة والولاية','error');return false}
+    if(!pickup){showAlert('يرجى إدخال عنوان الاستلام','error');return false}
+    if(!phone){showAlert('يرجى إدخال رقم هاتف المرسل','error');return false}
+    return true
+  }
+  return true
+}
 function goToStep(n){
-  if(n<1||n>3)return
+  if(n<1||n>4)return
+  if(n>currentStep){
+    for(let s=currentStep;s<n;s++){
+      if(!validateStep(s))return
+    }
+  }
   currentStep=n;updateStep()
+  if(n===4)renderReview()
 }
 function updateStep(){
   document.querySelectorAll('.wizard-step').forEach(s=>s.classList.add('hidden'))
   document.getElementById('step'+currentStep).classList.remove('hidden')
   document.querySelectorAll('.step').forEach(s=>s.classList.remove('active','done'))
-  for(let i=1;i<=3;i++){
+  for(let i=1;i<=4;i++){
     const el=document.querySelector('.step[data-step="'+i+'"]')
     if(i<currentStep)el.classList.add('done')
     else if(i===currentStep)el.classList.add('active')
   }
+}
+function renderReview(){
+  const get=id=>document.getElementById(id).value.trim()
+  const title=get('f-title'),desc=get('f-desc'),weight=get('f-weight'),type=get('f-type'),amount=get('f-amount')
+  const fragile=document.getElementById('f-fragile').checked
+  const timePref=get('f-time')
+  const gov=get('f-governorate'),wil=get('f-wilayat'),pickup=get('f-pickup'),senderPhone=get('f-sender-phone')
+  const recGov=get('f-recipient-governorate'),recWil=get('f-recipient-wilayat'),dropoff=get('f-dropoff'),recipientPhone=get('f-recipient-phone'),notes=get('f-notes')
+
+  function row(label,value){
+    return value?'<div class="detail-row"><span class="detail-label">'+label+':</span><span>'+esc(value)+'</span></div>':''
+  }
+
+  let html=''
+  html+='<div class="form-section-card"><div class="section-card-header">📦 بيانات الطرد</div>'
+    +row('العنوان',title)+row('الوصف',desc)+row('الوزن',weight)+row('النوع',type)+row('المبلغ',amount?amount+' ريال':'')+row('وقت التوصيل',timePref)+(fragile?'<div class="detail-row"><span class="detail-label">🫙</span><span>قابل للكسر</span></div>':'')
+    +'</div>'
+  html+='<div class="form-section-card"><div class="section-card-header sender-header">🧑 بيانات المرسل</div>'
+    +row('المحافظة',gov)+row('الولاية',wil)+row('عنوان الاستلام',pickup)+row('رقم الهاتف',senderPhone)
+    +'</div>'
+  html+='<div class="form-section-card"><div class="section-card-header recipient-header">👤 بيانات المستلم</div>'
+    +row('المحافظة',recGov)+row('الولاية',recWil)+row('عنوان التوصيل',dropoff)+row('رقم الهاتف',recipientPhone)+row('ملاحظات',notes)
+    +'</div>'
+  if(orderPhotoFile||senderPhotoFile||recipientPhotoFile){
+    html+='<div class="form-section-card"><div class="section-card-header notes-header">📸 الصور المرفقة</div>'
+      +(orderPhotoFile?row('صورة الطرد','✅ مرفقة'):'')
+      +(senderPhotoFile?row('صورة بيت المرسل','✅ مرفقة'):'')
+      +(recipientPhotoFile?row('صورة بيت المستلم','✅ مرفقة'):'')
+      +'</div>'
+  }
+  document.getElementById('reviewContent').innerHTML=html
 }
 
 function showAlert(msg,type){
